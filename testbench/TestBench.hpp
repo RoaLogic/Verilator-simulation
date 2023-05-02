@@ -51,6 +51,7 @@
 //Clock Manager
 #include "ClockManager.hpp"
 
+//Assertions
 #include <cassert>
 
 //For std::cout
@@ -146,6 +147,7 @@ namespace testbench
             {
                 if (_trace) 
                 {
+                    _trace->flush();
                     _trace->close();
                     _trace = NULL;
                 }
@@ -198,24 +200,20 @@ namespace testbench
              */
             virtual void tick(void)
             {
-                vluint64_t tickTime = _clkMgr->getTime().ns();
                 cSimtime_t time; 
 
                 //There should be at least 1 clock
                 assert (!_clkMgr->empty());
-                
+
+                //eval logic and tick clock(s)
                 _core->eval();
-                if (_trace)
-                {
-                    _trace->dump(tickTime);
-                } 
                 time = _clkMgr->tick();
-                tickTime = _clkMgr->getTime().ns();
                 _core->eval();
+
                 if (_trace)
                 {
-                    _trace->dump(tickTime);
-                    _trace->flush();
+                    //apparently internal resolution is 1000x Verilator's VCD dump
+                    _trace->dump( (vluint64_t)time.ns() *1000 );
                 } 
 
                 #ifdef DBG_TESTBENCH_H
