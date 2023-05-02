@@ -45,11 +45,11 @@
 #define TESTBENCH_HPP
 
 //For Verilator methods
-#include "verilated.h"
+#include <verilated.h>
 #include <verilated_vcd_c.h>
 
 //Clock Manager
-#include "ClockManager.hpp"
+#include "clockmanager.hpp"
 
 //Assertions
 #include <cassert>
@@ -115,7 +115,8 @@ namespace testbench
             {
                 close();
 
-                cSimtime_t time = getTime();
+                //save time before we destroy object
+                simtime_t time = getTime();
 
                 //Final Cleanup
                 _core->final();
@@ -171,7 +172,7 @@ namespace testbench
              * @param[in] HighPeriod  The period that the pin shall be high
              * @return a pointer to the clock object
              */
-            virtual cClock* addClock(uint8_t& clk, cSimtime_t LowPeriod, cSimtime_t HighPeriod)
+            virtual cClock* addClock(uint8_t& clk, simtime_t LowPeriod, simtime_t HighPeriod)
             {
           #ifdef DBG_TESTBENCH_H
               std::cout << "TESTBENCH_H - addClock (" << LowPeriod << "," << HighPeriod << ")\n";
@@ -187,7 +188,7 @@ namespace testbench
              * @param[in] Period      The period of the clock pin
              * @return a pointer to the clock object 
              */
-            virtual cClock* addClock(uint8_t& clk, cSimtime_t Period)
+            virtual cClock* addClock(uint8_t& clk, simtime_t Period)
             {
                 return _clkMgr->add(clk, Period);
             }
@@ -200,7 +201,7 @@ namespace testbench
              */
             virtual void tick(void)
             {
-                cSimtime_t time; 
+                simtime_t time; 
 
                 //There should be at least 1 clock
                 assert (!_clkMgr->empty());
@@ -226,7 +227,7 @@ namespace testbench
              * 
              * @return simulation runtime
              */
-            virtual cSimtime_t getTime(void)
+            virtual simtime_t getTime(void)
             {
               return _clkMgr->getTime();
             }
