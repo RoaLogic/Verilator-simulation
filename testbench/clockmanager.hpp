@@ -45,7 +45,7 @@
 #ifndef CLOCKMANAGER_HPP
 #define CLOCKMANAGER_HPP
 
-#include "Clock.hpp"
+#include "clock.hpp"
 
 //For vector
 #include <vector>
@@ -76,7 +76,7 @@ namespace clock
     {
         private:
             std::vector<cClock*> *_clocks;   //Collection holding all clocks
-            cSimtime_t _time; 
+            simtime_t _time; 
 
         public:
 
@@ -136,7 +136,7 @@ namespace clock
              * @param[in] HighPeriod  The period that the pin shall be high
              * @return cClock*        Pointer to the cClock object that is created
              */
-            virtual cClock* add(uint8_t& clkPin, cSimtime_t LowPeriod, cSimtime_t HighPeriod)
+            virtual cClock* add(uint8_t& clkPin, simtime_t LowPeriod, simtime_t HighPeriod)
             {
                 //Create new VClock
                 cClock* clock = new cClock(clkPin, LowPeriod, HighPeriod);
@@ -155,7 +155,7 @@ namespace clock
              * @param[in] Period      The period for the clock 
              * @return cClock*        Pointer to the cClock object that is created
              */
-            virtual cClock* add(uint8_t& clk, cSimtime_t Period)
+            virtual cClock* add(uint8_t& clk, simtime_t Period)
             {
                 return add(clk, Period/2.0, Period/2.0);
             }
@@ -180,15 +180,15 @@ namespace clock
              * 
              * @return It returns the current passed time
              */
-            virtual cSimtime_t tick(void)
+            virtual simtime_t tick(void)
             {
                 //Current minimum time to next event = maximum float value
-                cSimtime_t minTimeToNextEvent = cSimtime_t::max();
+                simtime_t minTimeToNextEvent = simtime_t::max();
 
                 //Find next event
                 for (const auto clk : *_clocks)
                 {
-                    cSimtime_t timeToNextEvent = clk->getTimeToNextEvent();
+                    simtime_t timeToNextEvent = clk->getTimeToNextEvent();
 
                     if (timeToNextEvent < minTimeToNextEvent)
                     {
@@ -219,7 +219,7 @@ namespace clock
              * 
              * @return float 
              */
-            virtual cSimtime_t getTime(void)
+            virtual simtime_t getTime(void)
             {
                 return _time;
             }
