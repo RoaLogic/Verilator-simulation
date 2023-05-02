@@ -46,7 +46,7 @@
 
 //For Verilator methods
 #include "verilated.h"
-//#include <verilated_vcd_c.h>
+#include <verilated_vcd_c.h>
 
 //Clock Manager
 #include "ClockManager.hpp"
@@ -82,7 +82,7 @@ namespace testbench
     {
         private:
             VerilatedContext* _context;  // Verilator Context 
-            //VerilatedVcdC*    _trace;    // Trace file           
+            VerilatedVcdC*    _trace;    // Trace file           
             cClockManager*    _clkMgr;   // Clock Manager
             bool              _finished; // Testbench finished
 
@@ -100,7 +100,7 @@ namespace testbench
                 _context(context),                
                 _finished(false)
             {
-                //Verilated::traceEverOn(true);
+                Verilated::traceEverOn(true);
                 _core = new VM;
                 //Create new Clock Manager
                 _clkMgr = new cClockManager();
@@ -112,7 +112,7 @@ namespace testbench
              */
             virtual ~cTestBench(void)
             {
-                //close();
+                close();
 
                 cSimtime_t time = getTime();
 
@@ -126,30 +126,30 @@ namespace testbench
                 std::cout << "Testbench finished at " << time << "\n";
             }
 
-            // /**
-            //  * @brief Open a trace file
-            //  * 
-            //  * @param vcdname 
-            //  */
-            // void opentrace(const char *vcdname) 
-            // {
-            //     if (!_trace) 
-            //     {
-            //         _trace = new VerilatedVcdC;
-            //         _core->trace(_trace, 99);
-            //         _trace->open(vcdname);
-            //     }
-            // }
+            /**
+             * @brief Open a trace file
+             * 
+             * @param vcdname 
+             */
+            void opentrace(const char *vcdname) 
+            {
+                if (!_trace) 
+                {
+                    _trace = new VerilatedVcdC;
+                    _core->trace(_trace, 99);
+                    _trace->open(vcdname);
+                }
+            }
 
-            // // Close a trace file
-            // void close(void) 
-            // {
-            //     if (_trace) 
-            //     {
-            //         _trace->close();
-            //         _trace = NULL;
-            //     }
-            // }
+            // Close a trace file
+            void close(void) 
+            {
+                if (_trace) 
+                {
+                    _trace->close();
+                    _trace = NULL;
+                }
+            }
 
             /**
              * @brief Evaluate the device under test
@@ -198,14 +198,25 @@ namespace testbench
              */
             virtual void tick(void)
             {
-                cSimtime_t time;
+                vluint64_t tickTime = _clkMgr->getTime().ns();
+                cSimtime_t time; 
 
                 //There should be at least 1 clock
                 assert (!_clkMgr->empty());
-
+                
                 _core->eval();
+                if (_trace)
+                {
+                    _trace->dump(tickTime);
+                } 
                 time = _clkMgr->tick();
+                tickTime = _clkMgr->getTime().ns();
                 _core->eval();
+                if (_trace)
+                {
+                    _trace->dump(tickTime);
+                    _trace->flush();
+                } 
 
                 #ifdef DBG_TESTBENCH_H
                     std::cout << "TESTBENCH_H - Tick: " << time << "\n";

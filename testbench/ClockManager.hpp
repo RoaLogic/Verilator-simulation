@@ -219,7 +219,7 @@ namespace clock
              * 
              * @return float 
              */
-            virtual float getTime(void)
+            virtual cSimtime_t getTime(void)
             {
                 return _time;
             }
