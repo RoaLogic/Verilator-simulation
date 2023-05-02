@@ -112,7 +112,7 @@ namespace testbench
              */
             virtual ~cTestBench(void)
             {
-                close();
+                //close();
 
                 cSimtime_t time = getTime();
 
