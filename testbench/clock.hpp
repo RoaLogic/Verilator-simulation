@@ -44,7 +44,7 @@
 #ifndef CLOCK_HPP
 #define CLOCK_HPP
 
-#include "SimTime.hpp"
+#include "simtime.hpp"
 #include <cassert>
 
 namespace RoaLogic
@@ -75,9 +75,9 @@ namespace clock
     {
         private:
         uint8_t&    _clk;             //!< Points to testbench clock variable
-        cSimtime_t  _lowPeriod;       //!< Clock Low Period in seconds
-        cSimtime_t  _highPeriod;      //!< Clock High Period in seconds
-        cSimtime_t  _timeToNextEvent; //!< Time until next event
+        simtime_t  _lowPeriod;        //!< Clock Low Period in seconds
+        simtime_t  _highPeriod;       //!< Clock High Period in seconds
+        simtime_t  _timeToNextEvent;  //!< Time until next event
 
         public:
 
@@ -88,7 +88,7 @@ namespace clock
          * @param[in] LowPeriod   The low period of the clock
          * @param[in] HighPeriod  The high period of the clock
          */
-        cClock(uint8_t& clk, cSimtime_t LowPeriod, cSimtime_t HighPeriod) :
+        cClock(uint8_t& clk, simtime_t LowPeriod, simtime_t HighPeriod) :
             _clk(clk),
             _lowPeriod(LowPeriod),
             _highPeriod(HighPeriod)
@@ -120,7 +120,7 @@ namespace clock
          * @param[in] Period  The low period to set  
          * @return The new low period
          */
-        virtual cSimtime_t setLowPeriod(cSimtime_t Period)
+        virtual simtime_t setLowPeriod(simtime_t Period)
         {
             _lowPeriod = Period;
             return _lowPeriod;
@@ -131,7 +131,7 @@ namespace clock
          * 
          * @return The low period
          */
-        virtual cSimtime_t getLowPeriod(void)
+        virtual simtime_t getLowPeriod(void)
         {
             return _lowPeriod;
         }
@@ -142,7 +142,7 @@ namespace clock
          * @param[in] Period  The high period to set  
          * @return The new high period
          */
-        virtual cSimtime_t setHighPeriod(cSimtime_t Period)
+        virtual simtime_t setHighPeriod(simtime_t Period)
         {
             _highPeriod = Period;
             return _highPeriod;
@@ -153,7 +153,7 @@ namespace clock
          * 
          * @return The high period
          */
-        virtual cSimtime_t getHighPeriod(void)
+        virtual simtime_t getHighPeriod(void)
         {
             return _highPeriod;
         }
@@ -163,7 +163,7 @@ namespace clock
          * 
          * @return simtime_t 
          */
-        virtual cSimtime_t getPeriod(void) const
+        virtual simtime_t getPeriod(void) const
         {
             return (_lowPeriod + _highPeriod);
         }
@@ -183,7 +183,7 @@ namespace clock
          * 
          * @return float 
          */
-        virtual cSimtime_t getTimeToNextEvent(void)
+        virtual simtime_t getTimeToNextEvent(void)
         {
       #ifdef DBG_VCLOCK_H
             std::cout << "VCLOCK_H - getTimeToNextEvent:" << _TimeToNextEvent << "\n";
@@ -198,7 +198,7 @@ namespace clock
          * @param[in] TimePassed The time that has passed since previous function
          * @return The time untill the next event
          */
-        virtual cSimtime_t updateTime(cSimtime_t TimePassed)
+        virtual simtime_t updateTime(simtime_t TimePassed)
         {
             //Subtract time-passed from the time until the next event
             _timeToNextEvent -= TimePassed;
