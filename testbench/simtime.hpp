@@ -155,7 +155,7 @@ namespace clock
         }
 
         //overload <<
-        friend std::ostream& operator<<(std::ostream& out, const cSimtime_t& t);
+        friend std::ostream& operator<<(std::ostream& out, const simtime_t& t);
     };
 
     //streaming operator
