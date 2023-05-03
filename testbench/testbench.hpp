@@ -33,7 +33,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 /*!
- * @file TesBench.hpp
+ * @file testbench.hpp
  * @author Richard Herveille
  * @brief Clock object
  * @version 0.1

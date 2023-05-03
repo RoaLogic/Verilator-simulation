@@ -45,6 +45,8 @@
 #define CLOCK_HPP
 
 #include "simtime.hpp"
+#include "uniqueid.hpp"
+
 #include <cassert>
 
 namespace RoaLogic
@@ -71,7 +73,7 @@ namespace clock
      *  eg.  LowPeriod=10ns, 100ps, ... etc
      *  e.g. VClock(bool &clk, string frequency) where frequency is 100MHz, 1.3GHz, 25.76MHz, etc
      */
-    class cClock
+    class cClock : common::cUniqueId
     {
         private:
         uint8_t&    _clk;             //!< Points to testbench clock variable
