@@ -33,7 +33,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 /*!
- * @file TesBench.hpp
+ * @file testbench.hpp
  * @author Richard Herveille
  * @brief Clock object
  * @version 0.1
@@ -49,7 +49,7 @@
 #include <verilated_vcd_c.h>
 
 //Clock Manager
-#include "clockmanager.hpp"
+#include <clockmanager.hpp>
 
 //Assertions
 #include <cassert>
@@ -57,7 +57,7 @@
 //For std::cout
 #include <iostream>
 
-#define DBG_TESTBENCH_H
+//#define DBG_TESTBENCH_H
 
 namespace RoaLogic
 {

@@ -44,11 +44,13 @@
 #ifndef CLOCK_HPP
 #define CLOCK_HPP
 
-#include "simtime.hpp"
+#include <simtime.hpp>
 #include <cassert>
+#include <subject.hpp>
 
 namespace RoaLogic
 {
+    using namespace common;
 namespace testbench
 {
 namespace clock
@@ -66,12 +68,8 @@ namespace clock
      * @details clock object to handle single clock inputs on the verilated design
      * The object holds a reference to the clock pin variable and the high and low period.
      * It will go high or low according to the time of the high and low periods.
-     * 
-     * @TODO: Support string type clock settings
-     *  eg.  LowPeriod=10ns, 100ps, ... etc
-     *  e.g. VClock(bool &clk, string frequency) where frequency is 100MHz, 1.3GHz, 25.76MHz, etc
      */
-    class cClock
+    class cClock : public cSubject
     {
         private:
         uint8_t&    _clk;             //!< Points to testbench clock variable
@@ -185,11 +183,11 @@ namespace clock
          */
         virtual simtime_t getTimeToNextEvent(void)
         {
-      #ifdef DBG_VCLOCK_H
-            std::cout << "VCLOCK_H - getTimeToNextEvent:" << _TimeToNextEvent << "\n";
-      #endif
+            #ifdef DBG_VCLOCK_H
+                    std::cout << "VCLOCK_H - getTimeToNextEvent:" << _TimeToNextEvent << "\n";
+            #endif
 
-          return _timeToNextEvent;
+            return _timeToNextEvent;
         }
 
         /**
@@ -221,6 +219,11 @@ namespace clock
         {
             //toggle clock
             _clk = !_clk;
+
+            if(_clk)
+            {
+                notifyObserver(eEvent::risingEdge);
+            }
 
             //Update TimeKeep
             _timeToNextEvent = _clk ? _highPeriod : _lowPeriod;

@@ -45,7 +45,7 @@
 #ifndef CLOCKMANAGER_HPP
 #define CLOCKMANAGER_HPP
 
-#include "clock.hpp"
+#include <clock.hpp>
 
 //For vector
 #include <vector>
