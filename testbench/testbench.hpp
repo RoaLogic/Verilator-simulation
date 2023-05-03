@@ -35,7 +35,7 @@
 /*!
  * @file testbench.hpp
  * @author Richard Herveille
- * @brief Clock object
+ * @brief Testbench object
  * @version 0.1
  * @date 30-apr-2023
  * @copyright See beginning of file
