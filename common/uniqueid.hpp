@@ -46,6 +46,7 @@
 
 #define UNIQUEID_HPP
 
+#include <atomic>
 
 namespace RoaLogic
 {
@@ -65,8 +66,8 @@ namespace common
     class cUniqueId
     {
         private:
-            static unsigned long _globalId;  //Global ID counter
-            const  unsigned long _myId;      //This instance's ID
+            static std::atomic<unsigned long> _globalId;  //Global ID counter
+            const  unsigned long _myId;                   //This instance's ID
 
         protected:
             /**

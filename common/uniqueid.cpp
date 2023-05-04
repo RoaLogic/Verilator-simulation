@@ -45,6 +45,6 @@
 #include "uniqueid.hpp"
 
 
-//Reset globalId
-unsigned long RoaLogic::common::cUniqueId::_globalId = 0;
+//Initialize non-constant globalId
+std::atomic<unsigned long> RoaLogic::common::cUniqueId::_globalId{0};
 
