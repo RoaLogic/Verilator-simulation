@@ -160,7 +160,7 @@ namespace test
 
         //constructor
         //store handle to coroutine function
-        sTest(handle_t h) : _h(h) {};
+        sTest (handle_t h) : _h(h) {};
 
         //destructor
         ~sTest()
