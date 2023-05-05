@@ -64,9 +64,7 @@ namespace test
     using std::experimental::suspend_never;
     using std::experimental::coroutine_handle;
 #else
-    using std::suspend_always;
-    using std::suspend_never;
-    using std::coroutine_handle;
+    using namespace std;
 #endif
 
     /**
@@ -94,8 +92,8 @@ namespace test
     //"co_yield expr" expands to "co_await p.yield_value(expr)" where 'p' is the promise object
     //"co_return expr" returns final value expr. This can/should be the result of the test (pass/fail)
 
-    template <typename T>
-    struct sTest {
+    template <typename T> struct sTest 
+    {
         struct promise_type;
         using handle_t = coroutine_handle<promise_type>;
 
@@ -162,7 +160,7 @@ namespace test
 
         //constructor
         //store handle to coroutine function
-        sTest<T> (handle_t h) : _h(h) {};
+        sTest(handle_t h) : _h(h) {};
 
         //destructor
         ~sTest()
@@ -213,8 +211,8 @@ namespace test
 
 
     //Awaiter
-    template <typename PromiseType>
-    struct sGetPromise {
+    template <typename PromiseType> struct sGetPromise 
+    {
         PromiseType *_p;
 
         //If await_ready() returns true, then co_await does not suspend the function
@@ -222,7 +220,8 @@ namespace test
         constexpr bool await_ready() const noexcept { return false; }
 
         //if await_suspend returns false, then co_await does not suspend the function
-        bool await_suspend(coroutine_handle<PromiseType> h) {
+        bool await_suspend(coroutine_handle<PromiseType> h) 
+        {
             //store handle to promise object
             _p = h.promise();
 
@@ -232,7 +231,8 @@ namespace test
         }
 
         //await_resume provides the return value of co_await expression
-        constexpr PromiseType* await_resume() const noexcept {
+        constexpr PromiseType* await_resume() const noexcept 
+        {
             return _p;
         }
     };

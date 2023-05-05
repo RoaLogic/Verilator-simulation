@@ -44,8 +44,8 @@
 #ifndef CLOCK_HPP
 #define CLOCK_HPP
 
-#include "simtime.hpp"
-#include "uniqueid.hpp"
+#include <simtime.hpp>
+#include <uniqueid.hpp>
 
 #include <queue>
 #include <cassert>
@@ -56,8 +56,6 @@ namespace testbench
 {
 namespace clock
 {
-    //For std::cout
-    //#include <iostream>
 
     /**
      * @class cClock
@@ -199,7 +197,7 @@ namespace clock
             std::cout << "VCLOCK_H - getTimeToNextEvent:" << _TimeToNextEvent << "\n";
       #endif
 
-          return _timeToNextEvent;
+            return _timeToNextEvent;
         }
 
 
@@ -218,7 +216,10 @@ namespace clock
             assert(_timeToNextEvent >= 0);
 
             //if TimeToNextEvent==0, then toggle the clock
-            if (_timeToNextEvent==0) toggle();
+            if (_timeToNextEvent==0) 
+            {
+                toggle();
+            }
 
             return _timeToNextEvent;
         }
@@ -261,48 +262,30 @@ namespace clock
         {
             std::cout << "callback()\n";
             posedgeQueue.push(h);
-            //return true;
         }
 
         void posedge()
         {
-          //Prevent queue feedback
+            //Prevent queue feedback
 
-          //create new empty queue
-          std::queue<std::function<void()>> posedgeQueueCopy;
+            //create new empty queue
+            std::queue<std::function<void()>> posedgeQueueCopy;
 
-          //swap empty queue and posedgeQueue
-          posedgeQueueCopy.swap(posedgeQueue);
+            //swap empty queue and posedgeQueue
+            posedgeQueueCopy.swap(posedgeQueue);
 
-          while (!posedgeQueueCopy.empty())
-          {
-              std::cout << "Calling coroutine handler from queue\n";
-              std::function<void()> h = posedgeQueueCopy.front();
-              posedgeQueueCopy.pop();
-              h();
-          }
+            while (!posedgeQueueCopy.empty())
+            {
+                std::cout << "Calling coroutine handler from queue\n";
+                std::function<void()> h = posedgeQueueCopy.front();
+                posedgeQueueCopy.pop();
+                h();
+            }
         }
 
         void negedge()
         {
         }
-
-        template <typename Function, typename... Args>
-        void atPosedge1(Function&& __f, Args&&... __args)
-        {
-            std::function<void()> function = std::bind(std::forward<Function>(__f), std::forward<Args>(__args)...);
-            posedgeQueue.push(function);
-            std::cout << "atPosedge called\n";
-        }
-
-        template <typename F>
-        void atPosedge2(F&& __f)
-        {
-            std::function<void()> function = std::bind(std::forward<F>(__f));
-            posedgeQueue.push(function);
-            std::cout << "atPosedge called\n";
-        }
-
     };
 }
 }
