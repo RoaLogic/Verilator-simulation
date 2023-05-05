@@ -139,6 +139,7 @@ namespace test
             {
                 //store value here into promise_type variable _value
                 _value = std::forward<From>(val);
+                _value.clockObj->callback(handle_t::from_promise(*this));
                 return {};
             }
 

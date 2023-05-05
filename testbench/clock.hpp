@@ -231,11 +231,23 @@ namespace clock
          */
         uint8_t toggle(void)
         {
+            std::cout << "toggle()\n";
+
             //toggle clock
             _clk = !_clk;
 
             //Update TimeKeep
             _timeToNextEvent = _clk ? _highPeriod : _lowPeriod;
+
+            //posedge/negedge
+            if (_clk)
+            {
+                posedge();
+            }
+            else
+            {
+                negedge();
+            }
 
             //return new state
             return _clk;
@@ -245,7 +257,33 @@ namespace clock
         /**
          * @brief Register coroutine for posedge
          */
-        bool atPosedge()
+        void callback(std::function<void()> h)
+        {
+            std::cout << "callback()\n";
+            posedgeQueue.push(h);
+            //return true;
+        }
+
+        void posedge()
+        {
+          //Prevent queue feedback
+
+          //create new empty queue
+          std::queue<std::function<void()>> posedgeQueueCopy;
+
+          //swap empty queue and posedgeQueue
+          posedgeQueueCopy.swap(posedgeQueue);
+
+          while (!posedgeQueueCopy.empty())
+          {
+              std::cout << "Calling coroutine handler from queue\n";
+              std::function<void()> h = posedgeQueueCopy.front();
+              posedgeQueueCopy.pop();
+              h();
+          }
+        }
+
+        void negedge()
         {
         }
 
