@@ -33,7 +33,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 /*!
- * @file Clock.hpp
+ * @file clock.hpp
  * @author Richard Herveille
  * @brief Clock object
  * @version 0.1
@@ -47,6 +47,7 @@
 #include "simtime.hpp"
 #include "uniqueid.hpp"
 
+#include <queue>
 #include <cassert>
 
 namespace RoaLogic
@@ -67,11 +68,7 @@ namespace clock
      * 
      * @details clock object to handle single clock inputs on the verilated design
      * The object holds a reference to the clock pin variable and the high and low period.
-     * It will go high or low according to the time of the high and low periods.
-     * 
-     * @TODO: Support string type clock settings
-     *  eg.  LowPeriod=10ns, 100ps, ... etc
-     *  e.g. VClock(bool &clk, string frequency) where frequency is 100MHz, 1.3GHz, 25.76MHz, etc
+     * It will transition from low-to-high or high-to-low according to the time of the high and low periods.
      */
     class cClock : common::cUniqueId
     {
@@ -80,6 +77,10 @@ namespace clock
         simtime_t  _lowPeriod;        //!< Clock Low Period in seconds
         simtime_t  _highPeriod;       //!< Clock High Period in seconds
         simtime_t  _timeToNextEvent;  //!< Time until next event
+
+        //queues for posedge/negedge coroutine functions
+        std::queue<std::function<void()>> posedgeQueue;
+
 
         public:
 
@@ -116,6 +117,7 @@ namespace clock
 
         };
 
+
         /**
          * @brief Set and get the Low Period 
          * 
@@ -128,6 +130,7 @@ namespace clock
             return _lowPeriod;
         }
 
+
         /**
          * @brief Get the Low Period 
          * 
@@ -137,6 +140,7 @@ namespace clock
         {
             return _lowPeriod;
         }
+
 
         /**
          * @brief Set and get the High Period 
@@ -150,6 +154,7 @@ namespace clock
             return _highPeriod;
         }
 
+
         /**
          * @brief Get the high Period 
          * 
@@ -159,6 +164,7 @@ namespace clock
         {
             return _highPeriod;
         }
+
 
         /**
          * @brief Get the Period 
@@ -170,6 +176,7 @@ namespace clock
             return (_lowPeriod + _highPeriod);
         }
 
+
         /**
          * @brief Get the Frequency
          * 
@@ -179,6 +186,7 @@ namespace clock
         {
             return getPeriod().frequency();
         }
+
 
         /**
          * @brief Get the Time To Next Event object
@@ -193,6 +201,7 @@ namespace clock
 
           return _timeToNextEvent;
         }
+
 
         /**
          * @brief Update the time to the next event
@@ -214,6 +223,7 @@ namespace clock
             return _timeToNextEvent;
         }
 
+
         /**
          * @brief Toggle the clock pin
          * 
@@ -230,6 +240,31 @@ namespace clock
             //return new state
             return _clk;
         }
+
+
+        /**
+         * @brief Register coroutine for posedge
+         */
+        bool atPosedge()
+        {
+        }
+
+        template <typename Function, typename... Args>
+        void atPosedge1(Function&& __f, Args&&... __args)
+        {
+            std::function<void()> function = std::bind(std::forward<Function>(__f), std::forward<Args>(__args)...);
+            posedgeQueue.push(function);
+            std::cout << "atPosedge called\n";
+        }
+
+        template <typename F>
+        void atPosedge2(F&& __f)
+        {
+            std::function<void()> function = std::bind(std::forward<F>(__f));
+            posedgeQueue.push(function);
+            std::cout << "atPosedge called\n";
+        }
+
     };
 }
 }

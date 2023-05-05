@@ -194,7 +194,7 @@ namespace testbench
             }
 
             /**
-             * @brief tick the testbench clock
+             * @brief tick the testbench clocks
              * 
              * @attention This function is needed to progress the testbench timing
              * 
