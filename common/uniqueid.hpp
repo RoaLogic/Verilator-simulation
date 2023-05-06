@@ -79,7 +79,7 @@ namespace common
             /**
              * @brief return the UniqueId
              */
-            unsigned long id() { return _myId; };
+            const unsigned long id() const { return _myId; };
     };
 
 }
