@@ -57,6 +57,8 @@ namespace testbench
 namespace clock
 {
 
+//#define DBG_VCLOCK_H
+
     /**
      * @class cClock
      * @author Richard Herveille
@@ -95,15 +97,15 @@ namespace clock
             _lowPeriod(LowPeriod),
             _highPeriod(HighPeriod)
         {
-      #ifdef DBG_VCLOCK_H
-          std::cout << "VCLOCK_H - Construct\n";
-      #endif
-
             //set clock low
             _clk = 0;
 
             //clock is low, so TimeToNextEvent is LowPeriod
             _timeToNextEvent = LowPeriod;
+
+      #ifdef DBG_VCLOCK_H
+          std::cout << "VCLOCK_H constructor(" << id() << ") lvl=" << _clk << " LowPeriod=" << _timeToNextEvent << std::endl;
+      #endif
         }
 
 
@@ -195,7 +197,7 @@ namespace clock
         virtual simtime_t getTimeToNextEvent(void)
         {
       #ifdef DBG_VCLOCK_H
-            std::cout << "VCLOCK_H - getTimeToNextEvent:" << _TimeToNextEvent << "\n";
+            std::cout << "VCLOCK_H(" << id() << ") - getTimeToNextEvent:" << _timeToNextEvent << "\n";
       #endif
 
             return _timeToNextEvent;
@@ -259,6 +261,9 @@ namespace clock
          */
         void addWaitForPosedge(std::function<void()> h)
         {
+      #ifdef DBG_VCLOCK_H
+          std::cout << "addWaitForPosedge(" << id() << ")\n";
+      #endif
             posedgeQueue.push(h);
         }
 
@@ -280,6 +285,9 @@ namespace clock
             //is there anything to do?
             if (!posedgeQueue.empty())
             {
+      #ifdef DBG_VCLOCK_H
+          std::cout << "resumeWaitForPosedge(" << id() << ")\n";
+      #endif
                 //create new empty queue
                 std::queue<std::function<void()>> posedgeQueueCopy;
 
