@@ -91,6 +91,7 @@ namespace clock
                 _clocks = new std::vector<cClock*>();
             }
 
+
             /**
              * @brief Destroy the cClockManager object
              * 
@@ -108,25 +109,28 @@ namespace clock
                 _clocks = NULL;
             }
 
+
             /**
              * @brief Add a new clock as reference
              * 
              * @param[in] Clock Clock object to add
              */
-            virtual void add(cClock &clock)
+            virtual void add(cClock &Clock) const
             {
-                _clocks->push_back(&clock);
+                _clocks->push_back(&Clock);
             }
+
 
             /**
              * @brief Add a new clock as pointer
              * 
              * @param[in] Clock Clock object to add
              */
-            virtual void add(cClock* clock)
+            virtual void add(cClock* Clock) const
             {
-                _clocks->push_back(clock);
+                _clocks->push_back(Clock);
             }
+
 
             /**
              * @brief Add and create a new clock
@@ -136,10 +140,10 @@ namespace clock
              * @param[in] HighPeriod  The period that the pin shall be high
              * @return cClock*        Pointer to the cClock object that is created
              */
-            virtual cClock* add(uint8_t& clkPin, simtime_t LowPeriod, simtime_t HighPeriod)
+            virtual cClock* const add(uint8_t& Clock, simtime_t LowPeriod, simtime_t HighPeriod) const
             {
                 //Create new VClock
-                cClock* clock = new cClock(clkPin, LowPeriod, HighPeriod);
+                cClock* clock = new cClock(Clock, LowPeriod, HighPeriod);
 
                 //Add clock
                 add(clock);
@@ -147,6 +151,7 @@ namespace clock
                 //Return new object
                 return clock;
             }
+
             
             /**
              * @brief Add and create a new clock
@@ -155,10 +160,11 @@ namespace clock
              * @param[in] Period      The period for the clock 
              * @return cClock*        Pointer to the cClock object that is created
              */
-            virtual cClock* add(uint8_t& clk, simtime_t Period)
+            virtual cClock* const add(uint8_t& Clock, simtime_t Period) const
             {
-                return add(clk, Period/2.0, Period/2.0);
+                return add(Clock, Period/2.0, Period/2.0);
             }
+
 
             /**
              * @brief Check if there are any clocks
@@ -166,10 +172,11 @@ namespace clock
              * @return true     There is atleast one clock
              * @return false    No clocks
              */
-            virtual bool empty(void)
+            virtual bool empty(void) const
             {
                 return _clocks->empty();
             }
+
 
             /**
              * @brief Time manager tick function
@@ -214,12 +221,13 @@ namespace clock
                 return _time;
             }
 
+
             /**
              * @brief get the current time
              * 
              * @return float 
              */
-            virtual simtime_t getTime(void)
+            virtual simtime_t getTime(void) const
             {
                 return _time;
             }

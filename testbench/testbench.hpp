@@ -107,6 +107,7 @@ namespace testbench
                 _clkMgr = new cClockManager();
             }
 
+
             /**
              * @brief Destroy the cTestBench object
              * 
@@ -128,6 +129,7 @@ namespace testbench
                 std::cout << "Testbench finished at " << time << "\n";
             }
 
+
             /**
              * @brief Open a trace file
              * 
@@ -140,8 +142,12 @@ namespace testbench
                     _trace = new VerilatedVcdC;
                     _core->trace(_trace, 99);
                     _trace->open(vcdname);
+
+                    //first data dump at time 0
+                    _trace->dump(0);
                 }
             }
+
 
             // Close a trace file
             void close(void) 
@@ -154,44 +160,48 @@ namespace testbench
                 }
             }
 
+
             /**
              * @brief Evaluate the device under test
              * 
              */
-            virtual void eval(void)
+            virtual void eval(void) const
             {
                 _core->eval();
             }
 
-            /**
-             * @brief Add a new clock to the testbench
-             * @details This function adds a new clock to the current testbench
-             * 
-             * @param[in] clk         Clock pin  
-             * @param[in] LowPeriod   The period that the pin shall be low
-             * @param[in] HighPeriod  The period that the pin shall be high
-             * @return a pointer to the clock object
-             */
-            virtual cClock* addClock(uint8_t& clk, simtime_t LowPeriod, simtime_t HighPeriod)
-            {
-          #ifdef DBG_TESTBENCH_H
-              std::cout << "TESTBENCH_H - addClock (" << LowPeriod << "," << HighPeriod << ")\n";
-          #endif
-              return _clkMgr->add(clk, LowPeriod, HighPeriod);
-            }
 
             /**
              * @brief Add a new clock to the testbench
              * @details This function adds a new clock to the current testbench
              * 
-             * @param[in] clk         Clock pin 
+             * @param[in] Clock        Clock pin  
+             * @param[in] LowPeriod   The period that the pin shall be low
+             * @param[in] HighPeriod  The period that the pin shall be high
+             * @return a pointer to the clock object
+             */
+            virtual cClock* addClock(uint8_t& Clock, simtime_t LowPeriod, simtime_t HighPeriod) const
+            {
+          #ifdef DBG_TESTBENCH_H
+              std::cout << "TESTBENCH_H - addClock (" << LowPeriod << "," << HighPeriod << ")\n";
+          #endif
+              return _clkMgr->add(Clock, LowPeriod, HighPeriod);
+            }
+
+
+            /**
+             * @brief Add a new clock to the testbench
+             * @details This function adds a new clock to the current testbench
+             * 
+             * @param[in] Clock       Clock pin 
              * @param[in] Period      The period of the clock pin
              * @return a pointer to the clock object 
              */
-            virtual cClock* addClock(uint8_t& clk, simtime_t Period)
+            virtual cClock* addClock(uint8_t& Clock, simtime_t Period) const
             {
-                return _clkMgr->add(clk, Period);
+                return _clkMgr->add(Clock, Period);
             }
+
 
             /**
              * @brief tick the testbench clocks
@@ -199,7 +209,7 @@ namespace testbench
              * @attention This function is needed to progress the testbench timing
              * 
              */
-            virtual void tick(void)
+            virtual void tick(void) const
             {
                 simtime_t time; 
 
@@ -211,10 +221,12 @@ namespace testbench
                 time = _clkMgr->tick();
                 _core->eval();
 
+
                 if (_trace)
                 {
+std::cout << "trace@" << (vluint64_t)(time.ns() *1000.0) << std::endl;
                     //apparently internal resolution is 1000x Verilator's VCD dump
-                    _trace->dump( (vluint64_t)time.ns() *1000 );
+                    _trace->dump( (vluint64_t)(time.ns() *1000.0) );
                 } 
 
                 #ifdef DBG_TESTBENCH_H
@@ -222,15 +234,17 @@ namespace testbench
                 #endif
             }
 
+
             /**
              * @brief Get the runtime of the simulation
              * 
              * @return simulation runtime
              */
-            virtual simtime_t getTime(void)
+            virtual simtime_t getTime(void) const
             {
               return _clkMgr->getTime();
             }
+
 
             /**
              * @brief Finish the simulation
@@ -241,13 +255,14 @@ namespace testbench
                 _finished = true;
             }
 
+
             /**
              * @brief Check if the system has finished
              * 
              * @return true 
              * @return false 
              */
-            virtual bool finished(void)
+            virtual bool finished(void) const
             {
                 return (_context->gotFinish() | _finished);
             }

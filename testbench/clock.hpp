@@ -137,7 +137,7 @@ namespace clock
          * 
          * @return The low period
          */
-        virtual simtime_t getLowPeriod(void)
+        virtual simtime_t getLowPeriod(void) const
         {
             return _lowPeriod;
         }
@@ -161,7 +161,7 @@ namespace clock
          * 
          * @return The high period
          */
-        virtual simtime_t getHighPeriod(void)
+        virtual simtime_t getHighPeriod(void) const
         {
             return _highPeriod;
         }
@@ -194,7 +194,7 @@ namespace clock
          * 
          * @return float 
          */
-        virtual simtime_t getTimeToNextEvent(void)
+        virtual simtime_t getTimeToNextEvent(void) const
         {
       #ifdef DBG_VCLOCK_H
             std::cout << "VCLOCK_H(" << id() << ") - getTimeToNextEvent:" << _timeToNextEvent << "\n";
@@ -214,6 +214,7 @@ namespace clock
         {
             //Subtract time-passed from the time until the next event
             _timeToNextEvent -= TimePassed;
+
 
             //_TimeToNextEvent should never be negative
             assert(_timeToNextEvent >= 0);
@@ -267,6 +268,7 @@ namespace clock
             posedgeQueue.push(h);
         }
 
+
         /**
          * @brief Add co_routine function waiting for negedge
          */
@@ -274,7 +276,6 @@ namespace clock
         {
             negedgeQueue.push(h);
         }
-
 
 
         /**
@@ -306,6 +307,7 @@ namespace clock
                 } while (!posedgeQueueCopy.empty());
             }
         }
+
 
         /**
          * @brief Resume functions waiting on rising clock edge
