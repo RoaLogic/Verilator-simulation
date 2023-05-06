@@ -78,6 +78,7 @@ namespace clock
 
         //queues for posedge/negedge coroutine functions
         std::queue<std::function<void()>> posedgeQueue;
+        std::queue<std::function<void()>> negedgeQueue;
 
 
         public:
@@ -232,22 +233,20 @@ namespace clock
          */
         uint8_t toggle(void)
         {
-            std::cout << "toggle()\n";
-
             //toggle clock
             _clk = !_clk;
 
             //Update TimeKeep
             _timeToNextEvent = _clk ? _highPeriod : _lowPeriod;
 
-            //posedge/negedge
+            //call routines waiting for posedge/negedge
             if (_clk)
             {
-                posedge();
+                resumeWaitForPosedge();
             }
             else
             {
-                negedge();
+                resumeWaitForNegedge();
             }
 
             //return new state
@@ -256,35 +255,75 @@ namespace clock
 
 
         /**
-         * @brief Register coroutine for posedge
+         * @brief Add co_routine function waiting for posedge
          */
-        void callback(std::function<void()> h)
+        void addWaitForPosedge(std::function<void()> h)
         {
-            std::cout << "callback()\n";
             posedgeQueue.push(h);
         }
 
-        void posedge()
+        /**
+         * @brief Add co_routine function waiting for negedge
+         */
+        void addWaitForNegedge(std::function<void()> h)
         {
-            //Prevent queue feedback
+            negedgeQueue.push(h);
+        }
 
-            //create new empty queue
-            std::queue<std::function<void()>> posedgeQueueCopy;
 
-            //swap empty queue and posedgeQueue
-            posedgeQueueCopy.swap(posedgeQueue);
 
-            while (!posedgeQueueCopy.empty())
+        /**
+         * @brief Resume functions waiting on rising clock edge
+         */
+        void resumeWaitForPosedge()
+        {
+            //is there anything to do?
+            if (!posedgeQueue.empty())
             {
-                std::cout << "Calling coroutine handler from queue\n";
-                std::function<void()> h = posedgeQueueCopy.front();
-                posedgeQueueCopy.pop();
-                h();
+                //create new empty queue
+                std::queue<std::function<void()>> posedgeQueueCopy;
+
+                //swap empty queue and posedgeQueue
+                posedgeQueueCopy.swap(posedgeQueue);
+
+                //we know there's at least 1 element in posedgeQueueCopy
+                do
+                {
+                    //pop the function from the queue
+                    std::function<void()> h = posedgeQueueCopy.front();
+                    posedgeQueueCopy.pop();
+
+                    //call the function
+                    h();
+                } while (!posedgeQueueCopy.empty());
             }
         }
 
-        void negedge()
+        /**
+         * @brief Resume functions waiting on rising clock edge
+         */
+        void resumeWaitForNegedge()
         {
+            //is there anything to do?
+            if (!negedgeQueue.empty())
+            {
+                //create new empty queue
+                std::queue<std::function<void()>> negedgeQueueCopy;
+
+                //swap empty queue and negedgeQueue
+                negedgeQueueCopy.swap(negedgeQueue);
+
+                //we know there's at least 1 element in negedgeQueueCopy
+                do
+                {
+                    //pop the function from the queue
+                    std::function<void()> h = negedgeQueueCopy.front();
+                    negedgeQueueCopy.pop();
+
+                    //call the function
+                    h();
+                } while (!negedgeQueueCopy.empty());
+            }
         }
     };
 }

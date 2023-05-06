@@ -59,20 +59,67 @@ namespace testbench
 {
 namespace test
 {
-#ifdef __APPL__
-    using std::experimental::suspend_always;
-    using std::experimental::suspend_never;
-    using std::experimental::coroutine_handle;
-#else
-    using namespace std;
-#endif
+    /**
+     * @brief Function headers, typedefs, and defines to simplify test creation
+     */
+    enum class coyieldEvent_t;
+    template <typename T> struct coyieldReturn_t;
+    template <typename T> struct sCoRoutineHandler;
+    
+
+    //type definition for clocked tests
+    typedef coyieldReturn_t<cClock*> coyieldReturnClock_t;
+    typedef sCoRoutineHandler<coyieldReturnClock_t> clockedTest_t;
+
+
+    //Macros for clockedTest
+    #define waitPosedge(clk) (co_yield (coyieldReturnClock_t){clk,coyieldEvent_t::clockPosedge})
+    #define waitNegedge(clk) (co_yield (coyieldReturnClock_t){clk,coyieldEvent_t::clockNegedge})
+
 
     /**
-     * @class cTest
-     * @author Richard Herveille
-     * @brief Test object 
+     * @enum    class coyieldEvent_t
+     * @author  Richard Herveille
+     * @brief   Enumeration class holding trigger event types
+     * @version 01
+     * @date    5-may-2023
+     *
+     * @details Enumeration class holding the different type of events that are supported
+     *          The co_routine function provides the type to the yield_value routine
+     *          The yield_value routine then determines which action to take for the event
+     */
+    enum class coyieldEvent_t 
+    {
+        clockPosedge,
+        clockNegedge
+    };
+
+
+
+    /**
+     * @struct  coyieldReturn_t
+     * @author  Richard Herveille
+     * @brief   co_yield return struct
      * @version 0.1
-     * @date 4-may-2023
+     * @date    5-may-2023
+     *
+     * @details This struct holds the data co_yield provides to the yield_value routine
+     */
+    template <typename T>
+    struct coyieldReturn_t 
+    {
+        T              object;
+        coyieldEvent_t event;
+    };
+
+
+
+    /**
+     * @class   cTest
+     * @author  Richard Herveille
+     * @brief   Test object 
+     * @version 0.1
+     * @date    4-may-2023
      * 
      * @details Typically tests stimulate the DUT on a cycle by cycle basis
      *          Multiple test could be running at the same time (think transaction based verification)
@@ -84,6 +131,7 @@ namespace test
      *          respective queues, thereby resuming the tests.
      */
 
+    using namespace std;
 
     //std::suspend_never::await_ready always returns false
     //std::suspend_always::await_ready always returns true
@@ -92,7 +140,8 @@ namespace test
     //"co_yield expr" expands to "co_await p.yield_value(expr)" where 'p' is the promise object
     //"co_return expr" returns final value expr. This can/should be the result of the test (pass/fail)
 
-    template <typename T> struct sTest 
+    template <typename T>
+    struct sCoRoutineHandler 
     {
         struct promise_type;
         using handle_t = coroutine_handle<promise_type>;
@@ -105,9 +154,9 @@ namespace test
 
             //MUST include get_return_object()
             //the result of get_return_object() is the return value of the coroutine function
-            sTest get_return_object()
+            sCoRoutineHandler get_return_object()
             {
-                return sTest(handle_t::from_promise(*this));
+                return sCoRoutineHandler(handle_t::from_promise(*this));
             }
 
             //suspend_always suspends the coroutine function immediatly on entry
@@ -136,82 +185,54 @@ namespace test
             suspend_always yield_value(From&& val)
             {
                 //store value here into promise_type variable _value
-                _value = std::forward<From>(val);
-                _value.clockObj->callback(handle_t::from_promise(*this));
+                //_value = std::forward<From>(val);
+                switch (val.event)
+                {
+                  case coyieldEvent_t::clockPosedge:
+                           val.object->addWaitForPosedge(handle_t::from_promise(*this));
+                           break;
+
+                  case coyieldEvent_t::clockNegedge:
+                           val.object->addWaitForNegedge(handle_t::from_promise(*this));
+                           break;
+                }
                 return {};
             }
 
-/*
-  !!! Cannot have both return_value() and return_void()
-  Since running of the edge seems a very valid approach for tests, we only support return_void()
-
-            //called when 'co_return expr' is called
-            void return_value(T val) { _value = val; }
-*/
-
+            /* !! Either return_void or return_value, but not both !! */
+     
             //called when 'co_return' is called (note: not "co_return e") or if the
             //coroutine function falls off the end (i.e. completes)
             //CAUTION: falling of the end without a return_void() causes undefined behaviour!!!!
             void return_void() {}
         };
 
+
         //Handle to coroutine
         handle_t _h;
 
         //constructor
         //store handle to coroutine function
-        sTest (handle_t h) : _h(h) {};
+        sCoRoutineHandler (handle_t h) : _h(h) {};
 
         //destructor
-        ~sTest()
+        ~sCoRoutineHandler()
         {
             //destroy coroutine function
             _h.destroy();
         }
 
+        //Did the co_routine function finish?
         explicit operator bool() 
         {
-            fill(); //The only way to find out whether or not we finished the coroutine function,
-                    //whether or not there is going to be a next value generated (co_yield) is to
-                    //execute/resume the coroutine function until the next co_yield or it falls
-                    //off the end. Then we store/cache result in promise to allow getter to grab
-                    //it without executing coroutine
             return !_h.done();
-        }
-
-        //Getter
-        T operator()()
-        {
-            fill();
-            _full = false; //move out previously cached result to make promise empty again
-            return std::move(_h.promise()._value);
-        }
-
-
-        private:
-        bool _full = false;
- 
-        void fill()
-        {
-            if (!_full)
-            {
-                _h();
-
-                //did the coroutine function throw an exception
-                if (_h.promise()._exception)
-                {
-                    //propagate coroutine exception
-                    std::rethrow_exception(_h.promise()._exception);
-                }
-
-                _full = true;
-            }
         }
     };
 
 
     //Awaiter
-    template <typename PromiseType> struct sGetPromise 
+    template <typename PromiseType>
+    struct sGetPromise 
     {
         PromiseType *_p;
 
