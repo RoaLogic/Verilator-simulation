@@ -211,6 +211,9 @@ namespace testbench
              */
             virtual void tick(void) const
             {
+          #ifdef DBG_TESTBENCH_H
+              std::cout << "TESTBENCH_H - tick()" << std::endl;
+          #endif
                 simtime_t time; 
 
                 //There should be at least 1 clock
@@ -224,7 +227,6 @@ namespace testbench
 
                 if (_trace)
                 {
-std::cout << "trace@" << (vluint64_t)(time.ns() *1000.0) << std::endl;
                     //apparently internal resolution is 1000x Verilator's VCD dump
                     _trace->dump( (vluint64_t)(time.ns() *1000.0) );
                 } 
