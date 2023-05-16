@@ -44,13 +44,7 @@
 #ifndef TEST_HPP
 #define TEST_HPP
 
-//Ugh ... MacOS/Clang uses 'experimental'
-#ifdef __APPLE__
 #include <coroutine>
-#else
-#include <coroutine>
-#endif
-
 #include <cassert>
 
 namespace RoaLogic
