@@ -163,9 +163,8 @@ namespace test
             //If final_suspend returns suspend_always then the object's state remains accessible
             //after the coroutine function finishes, but the object must be destroyed externally
             //Most notably .done() can not be called if the object is destroyed
-            //For a testbench test destroying the object sounds the correct approach, however
-            //we'll destroy the object in the destructor such that we can still use state
-            suspend_always final_suspend() noexcept { return {}; }
+            //For a testbench test destroying the object sounds the correct approach
+            suspend_never final_suspend() noexcept { return {}; }
 
             //Unhandled exception handler
             void unhandled_exception()
@@ -212,8 +211,11 @@ namespace test
         //destructor
         ~sCoRoutineHandler()
         {
+            //Let's not do that!!! In the new testbench setup the object gets immediately destroyed
+            //resulting in segfaults
+
             //destroy coroutine function
-            _h.destroy();
+            //_h.destroy();
         }
 
         //Did the co_routine function finish?
