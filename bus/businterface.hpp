@@ -47,13 +47,13 @@
 #define BUSINTERFACE_HPP
 
 #include <uniqueid.hpp>
-#include <test.hpp>
+#include <tasks.hpp>
 
 namespace RoaLogic
 {
 namespace bus
 {
-    using namespace RoaLogic::testbench::test;
+    using namespace RoaLogic::testbench::tasks;
 
     /**
      * @class cBusInterface
@@ -81,7 +81,7 @@ namespace bus
              * @brief Reset bus
              *
              */
-            virtual clockedTest_t reset() =0;
+            virtual clockedTask_t reset(unsigned duration=1) =0;
 
 
             /**
@@ -90,7 +90,7 @@ namespace bus
              * @param address[in] Address to read from
              * @return            Data read
              */
-            virtual clockedTest_t read(addrT address, dataT& data) =0;
+            virtual clockedTask_t read(addrT address, dataT& data) =0;
 
 
             /**
@@ -100,7 +100,7 @@ namespace bus
              * @param burstCount[in] Lenght of burst
              * @result               Array of read data
              */
-            virtual clockedTest_t burstRead(addrT address, dataT* buffer, unsigned burstCount) =0;
+            virtual clockedTask_t burstRead(addrT address, dataT* buffer, unsigned burstCount) =0;
 
 
             /**
@@ -109,7 +109,7 @@ namespace bus
              * @param address[in]  Address to write to
              * @param data[in]     Data to write
              */
-            virtual clockedTest_t write(addrT address, dataT data) =0;
+            virtual clockedTask_t write(addrT address, dataT data) =0;
 
 
             /**
@@ -118,7 +118,7 @@ namespace bus
              * @param address[in]  Start address of burst
              * @param data[in]     Pointer to Data to write
              */
-            virtual clockedTest_t burstWrite(addrT address, dataT* buffer, unsigned burstCount) =0;
+            virtual clockedTask_t burstWrite(addrT address, dataT* buffer, unsigned burstCount) =0;
     };
 }
 }

@@ -47,7 +47,7 @@
 #define BUSAPB4_HPP
 
 #include <businterface.hpp>
-#include <test.hpp>
+#include <tasks.hpp>
 #include <clock.hpp>
 
 #define DBG_BUSAPB4_H
@@ -57,7 +57,7 @@ namespace RoaLogic
 namespace bus
 {
     using namespace RoaLogic::testbench;
-    using namespace RoaLogic::testbench::test;
+    using namespace RoaLogic::testbench::tasks;
 
     template <typename PADDR_t = uint8_t,
               typename PDATA_t = uint8_t>
@@ -171,7 +171,7 @@ namespace bus
             /**
              * @brief Reset APB bus
              */
-            virtual clockedTest_t reset() {
+            virtual clockedTask_t reset(unsigned duration=1) {
                 _busy  = true;
                 _error = false;
 
@@ -179,14 +179,15 @@ namespace bus
               std::cout << "APB4 bus id():... PRESET=0" << std::endl;
           #endif
                 PRESETn = !1;
-                waitPosedge(_pclk);
+                for (int i=0; i<duration; i++)
+                    waitPosedge(_pclk);
 
 
           #ifdef DBG_BUSAPB4_H
               std::cout << "APB4 bus id():... PRESET=1" << std::endl;
           #endif
                 PRESETn = !0;
-                waitPosedge(_pclk);
+                //waitPosedge(_pclk);
 
                 _busy = false;
             };
@@ -198,7 +199,7 @@ namespace bus
              * @param address[in] Address to read from
              * @return            Data read
              */
-            virtual clockedTest_t read(PADDR_t address, PDATA_t& data) {
+            virtual clockedTask_t read(PADDR_t address, PDATA_t& data) {
                 _busy  = true;
                 _error = false;
 
@@ -229,7 +230,7 @@ namespace bus
              * @param burstCount[in] Lenght of burst
              * @result               Array of read data
              */
-            virtual clockedTest_t burstRead(PADDR_t address, PDATA_t* buffer, unsigned burstCount) {
+            virtual clockedTask_t burstRead(PADDR_t address, PDATA_t* buffer, unsigned burstCount) {
               co_return;
             }
 
@@ -240,7 +241,7 @@ namespace bus
              * @param address[in]  Address to write to
              * @param data[in]     Data to write
              */
-            virtual clockedTest_t write(PADDR_t address, PDATA_t data) {
+            virtual clockedTask_t write(PADDR_t address, PDATA_t data) {
                 _busy  = true;
                 _error = false;
 
@@ -269,7 +270,7 @@ namespace bus
              * @param address[in]  Start address of burst
              * @param data[in]     Pointer to Data to write
              */
-            virtual clockedTest_t burstWrite(PADDR_t address, PDATA_t* buffer, unsigned burstCount) {
+            virtual clockedTask_t burstWrite(PADDR_t address, PDATA_t* buffer, unsigned burstCount) {
               co_return;
             };
     };
