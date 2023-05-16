@@ -47,6 +47,7 @@
 #include <simtime.hpp>
 #include <uniqueid.hpp>
 
+#include <coroutine>
 #include <queue>
 #include <cassert>
 
@@ -57,7 +58,7 @@ namespace testbench
 namespace clock
 {
 
-//#define DBG_VCLOCK_H
+#define DBG_CLOCK_H
 
     /**
      * @class cClock
@@ -79,8 +80,8 @@ namespace clock
         simtime_t  _timeToNextEvent;  //!< Time until next event
 
         //queues for posedge/negedge coroutine functions
-        std::queue<std::function<void()>> posedgeQueue;
-        std::queue<std::function<void()>> negedgeQueue;
+        std::queue<std::coroutine_handle<>> posedgeQueue;
+        std::queue<std::coroutine_handle<>> negedgeQueue;
 
 
         public:
@@ -103,8 +104,8 @@ namespace clock
             //clock is low, so TimeToNextEvent is LowPeriod
             _timeToNextEvent = LowPeriod;
 
-      #ifdef DBG_VCLOCK_H
-          std::cout << "VCLOCK_H constructor(" << id() << ") lvl=" << _clk << " LowPeriod=" << _timeToNextEvent << std::endl;
+      #ifdef DBG_CLOCK_H
+          std::cout << "CLOCK_H constructor(" << id() << ") lvl=" << (unsigned)_clk << " LowPeriod=" << _timeToNextEvent << std::endl;
       #endif
         }
 
@@ -115,7 +116,9 @@ namespace clock
          */
         virtual ~cClock(void) 
         {
-
+      #ifdef DBG_CLOCK_H
+          std::cout << "CLOCK_H destructor(" << id() << ")" << std::endl;
+      #endif
         };
 
 
@@ -196,8 +199,8 @@ namespace clock
          */
         virtual simtime_t getTimeToNextEvent(void) const
         {
-      #ifdef DBG_VCLOCK_H
-            std::cout << "VCLOCK_H(" << id() << ") - getTimeToNextEvent:" << _timeToNextEvent << "\n";
+      #ifdef DBG_CLOCK_H
+            std::cout << "CLOCK_H(" << id() << ") - getTimeToNextEvent:" << _timeToNextEvent << "\n";
       #endif
 
             return _timeToNextEvent;
@@ -212,6 +215,9 @@ namespace clock
          */
         virtual simtime_t updateTime(simtime_t TimePassed)
         {
+      #ifdef DBG_CLOCK_H
+          std::cout << "CLOCK_H(" << id() << ") updateTime(" << TimePassed << ")" << std::endl;
+      #endif
             //Subtract time-passed from the time until the next event
             _timeToNextEvent -= TimePassed;
 
@@ -260,10 +266,10 @@ namespace clock
         /**
          * @brief Add co_routine function waiting for posedge
          */
-        void addWaitForPosedge(std::function<void()> h)
+        void addWaitForPosedge(std::coroutine_handle<> h)
         {
-      #ifdef DBG_VCLOCK_H
-          std::cout << "addWaitForPosedge(" << id() << ")\n";
+      #ifdef DBG_CLOCK_H
+          std::cout << "addWaitForPosedge(" << id() << ") handle:" << static_cast<void*>(&h) << std::endl;
       #endif
             posedgeQueue.push(h);
         }
@@ -272,7 +278,7 @@ namespace clock
         /**
          * @brief Add co_routine function waiting for negedge
          */
-        void addWaitForNegedge(std::function<void()> h)
+        void addWaitForNegedge(std::coroutine_handle<> h)
         {
             negedgeQueue.push(h);
         }
@@ -286,11 +292,11 @@ namespace clock
             //is there anything to do?
             if (!posedgeQueue.empty())
             {
-      #ifdef DBG_VCLOCK_H
-          std::cout << "resumeWaitForPosedge(" << id() << ")\n";
+      #ifdef DBG_CLOCK_H
+          std::cout << "resumeWaitForPosedge(" << id() << ")" << std::endl;
       #endif
                 //create new empty queue
-                std::queue<std::function<void()>> posedgeQueueCopy;
+                std::queue<std::coroutine_handle<>> posedgeQueueCopy;
 
                 //swap empty queue and posedgeQueue
                 posedgeQueueCopy.swap(posedgeQueue);
@@ -299,11 +305,12 @@ namespace clock
                 do
                 {
                     //pop the function from the queue
-                    std::function<void()> h = posedgeQueueCopy.front();
+                    std::coroutine_handle<> h = posedgeQueueCopy.front();
                     posedgeQueueCopy.pop();
 
                     //call the function
-                    h();
+std::cout << "Calling h(), handle:" << static_cast<void*>(&h) << std::endl;
+                    h.resume();
                 } while (!posedgeQueueCopy.empty());
             }
         }
@@ -318,7 +325,7 @@ namespace clock
             if (!negedgeQueue.empty())
             {
                 //create new empty queue
-                std::queue<std::function<void()>> negedgeQueueCopy;
+                std::queue<std::coroutine_handle<>> negedgeQueueCopy;
 
                 //swap empty queue and negedgeQueue
                 negedgeQueueCopy.swap(negedgeQueue);
@@ -327,11 +334,11 @@ namespace clock
                 do
                 {
                     //pop the function from the queue
-                    std::function<void()> h = negedgeQueueCopy.front();
+                    std::coroutine_handle<> h = negedgeQueueCopy.front();
                     negedgeQueueCopy.pop();
 
                     //call the function
-                    h();
+                    h.resume();
                 } while (!negedgeQueueCopy.empty());
             }
         }
