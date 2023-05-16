@@ -269,7 +269,7 @@ namespace clock
         void addWaitForPosedge(std::coroutine_handle<> h)
         {
       #ifdef DBG_CLOCK_H
-          std::cout << "addWaitForPosedge(" << id() << ") handle:" << static_cast<void*>(&h) << std::endl;
+          std::cout << "addWaitForPosedge(" << id() << ")" << std::endl;
       #endif
             posedgeQueue.push(h);
         }
@@ -309,7 +309,6 @@ namespace clock
                     posedgeQueueCopy.pop();
 
                     //call the function
-std::cout << "Calling h(), handle:" << static_cast<void*>(&h) << std::endl;
                     h.resume();
                 } while (!posedgeQueueCopy.empty());
             }
