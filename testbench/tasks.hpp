@@ -5,7 +5,7 @@
 //   |  |\  \ ' '-' '\ '-'  |    |  '--.' '-' ' '-' ||  |\ `--.    //
 //   `--' '--' `---'  `--`--'    `-----' `---' `-   /`--' `---'    //
 //                                             `---'               //
-//    Base Class for a single Test                                 //
+//    Base Class for a Task                                        //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
@@ -33,16 +33,16 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 /*!
- * @file test.hpp
+ * @file task.hpp
  * @author Richard Herveille
  * @brief Test object
- * @version 0.1
- * @date 30-apr-2023
+ * @version 0.2
+ * @date 16-may-2023
  * @copyright See beginning of file
  */
 
-#ifndef TEST_HPP
-#define TEST_HPP
+#ifndef TASKS_HPP
+#define TASKS_HPP
 
 #include <coroutine>
 #include <cassert>
@@ -51,7 +51,7 @@ namespace RoaLogic
 {
 namespace testbench
 {
-namespace test
+namespace tasks
 {
     /**
      * @brief Function headers, typedefs, and defines to simplify test creation
@@ -63,7 +63,7 @@ namespace test
 
     //type definition for clocked tests
     typedef coyieldReturn_t<cClock*> coyieldReturnClock_t;
-    typedef sCoRoutineHandler<coyieldReturnClock_t> clockedTest_t;
+    typedef sCoRoutineHandler<coyieldReturnClock_t> clockedTask_t;
 
 
     //Macros for clockedTest
@@ -109,11 +109,11 @@ namespace test
 
 
     /**
-     * @class   cTest
+     * @struct  cCoRoutineHandler
      * @author  Richard Herveille
      * @brief   Test object 
-     * @version 0.1
-     * @date    4-may-2023
+     * @version 0.2
+     * @date    16-may-2023
      * 
      * @details Typically tests stimulate the DUT on a cycle by cycle basis
      *          Multiple test could be running at the same time (think transaction based verification)
