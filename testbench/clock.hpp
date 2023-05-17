@@ -119,7 +119,7 @@ namespace clock
       #ifdef DBG_CLOCK_H
           std::cout << "CLOCK_H destructor(" << id() << ")" << std::endl;
       #endif
-        };
+        }
 
 
         /**
