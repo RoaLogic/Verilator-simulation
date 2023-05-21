@@ -63,9 +63,6 @@ namespace RoaLogic
 {
 namespace testbench
 {
-
-    using namespace clock;
-
     /**
      * @class cTestBench
      * @author Richard Herveille
@@ -82,13 +79,13 @@ namespace testbench
     template <class VM> class cTestBench
     {
         private:
-            VerilatedContext* _context;  // Verilator Context 
-            VerilatedVcdC*    _trace;    // Trace file           
-            cClockManager*    _clkMgr;   // Clock Manager
-            bool              _finished; // Testbench finished
+            VerilatedContext*      _context;  // Verilator Context
+            VerilatedVcdC*         _trace;    // Trace file 
+            clock::cClockManager*  _clkMgr;   // Clock Manager
+            bool                   _finished; // Testbench finished
 
         protected:
-            VM*               _core;     //Verilator Model to test
+            VM*                    _core;     //Verilator Model to test
     
         public:
 
@@ -104,7 +101,7 @@ namespace testbench
                 Verilated::traceEverOn(true);
                 _core = new VM;
                 //Create new Clock Manager
-                _clkMgr = new cClockManager();
+                _clkMgr = new clock::cClockManager();
             }
 
 
@@ -117,7 +114,7 @@ namespace testbench
                 close();
 
                 //save time before we destroy object
-                simtime_t time = getTime();
+                clock::simtime_t time = getTime();
 
                 //Final Cleanup
                 _core->final();
@@ -180,7 +177,7 @@ namespace testbench
              * @param[in] HighPeriod  The period that the pin shall be high
              * @return a pointer to the clock object
              */
-            virtual cClock* addClock(uint8_t& Clock, simtime_t LowPeriod, simtime_t HighPeriod) const
+            virtual clock::cClock* addClock(uint8_t& Clock, clock::simtime_t LowPeriod, clock::simtime_t HighPeriod) const
             {
           #ifdef DBG_TESTBENCH_H
               std::cout << "TESTBENCH_H - addClock (" << LowPeriod << "," << HighPeriod << ")\n";
@@ -197,7 +194,7 @@ namespace testbench
              * @param[in] Period      The period of the clock pin
              * @return a pointer to the clock object 
              */
-            virtual cClock* addClock(uint8_t& Clock, simtime_t Period) const
+            virtual clock::cClock* addClock(uint8_t& Clock, clock::simtime_t Period) const
             {
                 return _clkMgr->add(Clock, Period);
             }
@@ -214,7 +211,7 @@ namespace testbench
           #ifdef DBG_TESTBENCH_H
               std::cout << "TESTBENCH_H - tick()" << std::endl;
           #endif
-                simtime_t time; 
+                clock::simtime_t time;
 
                 //There should be at least 1 clock
                 assert (!_clkMgr->empty());
@@ -242,7 +239,7 @@ namespace testbench
              * 
              * @return simulation runtime
              */
-            virtual simtime_t getTime(void) const
+            virtual clock::simtime_t getTime(void) const
             {
               return _clkMgr->getTime();
             }
