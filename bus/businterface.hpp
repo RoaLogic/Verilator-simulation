@@ -69,28 +69,73 @@ namespace bus
               typename dataT = unsigned char> class cBusInterface : public common::cUniqueId
     {
         public:
-            cBusInterface() : cUniqueId() {};
+            bool _busy;
+            bool _error;
+
+            /**
+             * @brief Constructor
+             */
+            cBusInterface() : _busy(false), _error(false) { }
+
 
             /**
              * @brief Destroy the cBusBase object
              */
-            virtual ~cBusInterface() {};
+            virtual ~cBusInterface() {}
+
+
+            /**
+             * @brief Denote start of transaction
+             */
+            virtual void transactionStart() { _busy=true; }
+
+
+            /**
+             * @brief Denote end of transaction
+             */
+            virtual void transactionEnd() { _busy=false; }
+
+
+            /**
+             * @brief Is a transaction in progress?
+             *
+             * @return true when a transaction is in progress
+             */
+            virtual bool busy() { return _busy; }
+
+
+            /**
+             * @brief Has current transaction completed?
+             *
+             * @return true when the current transaction completed
+             */
+            virtual bool done() { return !_busy; }
+
+
+            /**
+             * @brief Bus transacted terminated with/due to error?
+             *
+             * @return true when the bus transaction terminated with/due to an error
+             */
+            virtual bool error() { return _error; }
 
 
             /**
              * @brief Reset bus
              *
              */
-            virtual clockedTask_t reset(unsigned duration=1) =0;
+            virtual clockedTask_t reset(unsigned duration=1) { co_return; }
 
 
             /**
              * @brief Perform a Single Read Transaction on the bus
              *
              * @param address[in] Address to read from
+             * @param data        Databuffer to hold data read from the bus
+             * @param burstLength Number of transaction
              * @return            Data read
              */
-            virtual clockedTask_t read(addrT address, dataT& data) =0;
+            virtual clockedTask_t read(addrT address, dataT& data, unsigned burstLength=1) { co_return; }
 
 
             /**
@@ -100,7 +145,7 @@ namespace bus
              * @param burstCount[in] Lenght of burst
              * @result               Array of read data
              */
-            virtual clockedTask_t burstRead(addrT address, dataT* buffer, unsigned burstCount) =0;
+            virtual clockedTask_t burstRead(addrT address, dataT* buffer, unsigned burstCount) { co_return; }
 
 
             /**
@@ -109,7 +154,7 @@ namespace bus
              * @param address[in]  Address to write to
              * @param data[in]     Data to write
              */
-            virtual clockedTask_t write(addrT address, dataT data) =0;
+            virtual clockedTask_t write(addrT address, dataT data, unsigned burstLenght=1) { co_return; }
 
 
             /**
@@ -118,7 +163,7 @@ namespace bus
              * @param address[in]  Start address of burst
              * @param data[in]     Pointer to Data to write
              */
-            virtual clockedTask_t burstWrite(addrT address, dataT* buffer, unsigned burstCount) =0;
+            virtual clockedTask_t burstWrite(addrT address, dataT* buffer, unsigned burstCount) { co_return; }
     };
 }
 }
