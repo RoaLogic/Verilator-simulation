@@ -46,6 +46,7 @@
 
 #include <coroutine>
 #include <cassert>
+#include <clock.hpp>
 
 namespace RoaLogic
 {
@@ -62,7 +63,7 @@ namespace tasks
     
 
     //type definition for clocked tests
-    typedef coyieldReturn_t<cClock*> coyieldReturnClock_t;
+    typedef coyieldReturn_t<clock::cClock*> coyieldReturnClock_t;
     typedef sCoRoutineHandler<coyieldReturnClock_t> clockedTask_t;
 
 
