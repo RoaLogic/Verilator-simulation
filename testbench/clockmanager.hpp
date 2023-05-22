@@ -56,7 +56,7 @@
 //For std::cout
 #include <iostream>
 
-#define DBG_CLOCKMANAGER_H
+//#define DBG_CLOCKMANAGER_H
  
 namespace RoaLogic
 {
@@ -78,7 +78,7 @@ namespace clock
     {
         private:
             std::vector<cClock*> *_clocks;   //Collection holding all clocks
-            simtime_t _time; 
+            simtime_t _time;
 
         public:
 
@@ -110,6 +110,7 @@ namespace clock
                 delete _clocks;
                 _clocks = NULL;
             }
+
 
 
             /**
@@ -222,7 +223,6 @@ namespace clock
 
                 //Store new time
                 _time += minTimeToNextEvent;
-std::cout << "CLOCKMANAGER_H done tick()\n";
 
                 return _time;
             }
