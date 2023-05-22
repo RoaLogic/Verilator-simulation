@@ -65,6 +65,14 @@ namespace bus
     using namespace common;
 
     /**
+     * Verilator Transaction Sequence
+     * ------------------------------
+     * 1. wait for clock edge
+     * 2. set signals
+     */
+
+
+    /**
      * @class cBusAPB4
      * @author Richard Herveille
      * @brief APB Bus Interface Class
@@ -138,32 +146,72 @@ namespace bus
             /**
              * @brief Reset APB bus
              */
-            virtual clockedTask_t reset(unsigned duration=1) {
+            virtual clockedTask_t reset(unsigned duration=1)
+            {
                 this->transactionStart();
                 _error = false;
 
-          #ifdef DBG_BUSAPB4_H
-              std::cout << "APB4(" << this->id() << ") PRESET=0" << std::endl;
-          #endif
                 PRESETn = L;
                 for (int i=0; i<duration; i++) waitPosedge(_pclk);
-
-          #ifdef DBG_BUSAPB4_H
-              std::cout << "APB4(" << this->id() <<") PRESET=1" << std::endl;
-          #endif
+                
                 PRESETn = H;
-                //waitPosedge(_pclk);
 
                 this->transactionEnd();
             }
 
 
             /**
-             * @brief Perform a Single Read Transaction on the bus
+             * @brief Idle APB bus (Idle Transactions)
+             */
+            virtual clockedTask_t idle(unsigned duration=1)
+            {
+              this->transactionStart();
+
+              PRESETn = H;
+              PSEL    = L;
+              PENABLE = L;
+              for (int i=0; i<duration; i++) waitPosedge(_pclk);
+
+              this->transactionEnd();
+            }
+
+
+            /**
+             * @brief Perform a single read transaction
              *
-             * @param address[in]    Start address to read from
-             * @param buffer[in]     Reference to buffer to store the data read
-             * @param burstCount[in] Number of transactions in this burst
+             * @param address Address to read from
+             * @param data  Reference to databuffer to store the data read from the bus
+             */
+            virtual clockedTask_t read(PADDR_t address, PDATA_t& buffer)
+            {
+//std::cout << "APB4 bus(" << this->id() << ") read from " << hex << unsigned(address) << std::endl;
+                this->transactionStart();
+                _error = false;
+
+                PSEL    = H;
+                PENABLE = L;
+                PADDR   = address;
+                PWRITE  = L;
+                waitPosedge(_pclk);
+
+                PENABLE = H;
+                waitPosedge(_pclk);
+
+                while (PREADY == L) waitPosedge(_pclk);
+
+                buffer=PRDATA;
+                _error = (PSLVERR == H);
+
+                this->transactionEnd();
+            }
+
+
+            /**
+             * @brief Perform a burst read transaction on the bus
+             *
+             * @param address     Start address to read from
+             * @param buffer      Databuffer to store the data read
+             * @param burstCount  Number of transactions in this burst
              */
             virtual clockedTask_t read(PADDR_t address, bufferType* buffer, unsigned burstCount=1) {
                 this->transactionStart();
@@ -186,20 +234,48 @@ namespace bus
                     _error = (PSLVERR == H);
                 }
 
-                PSEL    = L;
+                this->transactionEnd();
+            }
+
+
+            /**
+             * @brief Perform a single write transactions on the bus
+             *
+             * @param address Address to write to
+             * @param data    Data to write
+             */
+            virtual clockedTask_t write(PADDR_t address, PDATA_t data)
+            {
+//std::cout << "APB4 bus(" << this->id() << ") write " << hex << unsigned(data) << " to address " << hex << unsigned(address) << std::endl;
+                this->transactionStart();
+                _error = false;
+
+                PSEL    = H;
                 PENABLE = L;
+                PADDR   = address;
+                PWRITE  = H;
+                waitPosedge(_pclk);
+
+                PENABLE = H;
+                PWDATA  = data;
+                waitPosedge(_pclk);
+
+                while (PREADY == L) waitPosedge(_pclk);
+
+                _error = (PSLVERR == H);
 
                 this->transactionEnd();
             }
 
 
             /**
-             * @brief Perform Write Transactions on the bus
+             * @brief Perform burst write transaction on the bus
              *
-             * @param address[in]    Start address to write to
-             * @param buffer[in]     Reference to buffer containint data to write
-             * @param burstCount[in] Number of transactions in this burst
+             * @param address    Start address of the burst transaction
+             * @param buffer     Databuffer that holds the data to write
+             * @param burstCount Number of transactions in this burst
              */
+
             virtual clockedTask_t write(PADDR_t address, bufferType* buffer, unsigned burstCount=1) {
                 this->transactionStart();
                 _error = false;
@@ -220,9 +296,6 @@ namespace bus
 
                     _error = (PSLVERR == H);
                 }
-
-                PSEL    = L;
-                PENABLE = L;
 
                 this->transactionEnd();
             }

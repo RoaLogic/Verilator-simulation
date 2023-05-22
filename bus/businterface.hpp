@@ -123,19 +123,28 @@ namespace bus
             /**
              * @brief Reset bus
              *
+             * @param duration Number of cycles to assert the reset signal.
+             *                 The default duration is 1 cycle
              */
-            virtual clockedTask_t reset(unsigned duration=1) { co_return; }
+            virtual clockedTask_t reset(unsigned duration=1) =0;
 
 
             /**
-             * @brief Perform a Single Read Transaction on the bus
+             * @brief Idles the bus
              *
-             * @param address[in] Address to read from
-             * @param data        Databuffer to hold data read from the bus
-             * @param burstLength Number of transaction
-             * @return            Data read
+             * @param duration Number of idle cycles
+             *                 The default is 1 cycle
              */
-            virtual clockedTask_t read(addrT address, dataT& data, unsigned burstLength=1) { co_return; }
+            virtual clockedTask_t idle(unsigned duration=1) =0;
+
+
+            /**
+             * @brief Perform a single read transaction on the bus
+             *
+             * @param address     Address to read from
+             * @param data        Reference to databuffer to store the data read from the bus
+             */
+            virtual clockedTask_t read(addrT address, dataT& data) =0;
 
 
             /**
@@ -149,12 +158,12 @@ namespace bus
 
 
             /**
-             * @brief Perform a Write Transaction on the bus
+             * @brief Perform a single write transaction on the bus
              *
              * @param address[in]  Address to write to
              * @param data[in]     Data to write
              */
-            virtual clockedTask_t write(addrT address, dataT data, unsigned burstLenght=1) { co_return; }
+            virtual clockedTask_t write(addrT address, dataT data) =0;
 
 
             /**
