@@ -57,12 +57,16 @@
 //For std::cout
 #include <iostream>
 
-#define DBG_TESTBENCH_H
+//#define DBG_TESTBENCH_H
 
 namespace RoaLogic
 {
 namespace testbench
 {
+    //apparently internal testbench resolution is 1000x verilator resolution/respresentation
+    const long double ratioTestbenchToVerilator = 1000.0;
+
+
     /**
      * @class cTestBench
      * @author Richard Herveille
@@ -139,9 +143,6 @@ namespace testbench
                     _trace = new VerilatedVcdC;
                     _core->trace(_trace, 99);
                     _trace->open(vcdname);
-
-                    //first data dump at time 0
-                    _trace->dump(0);
                 }
             }
 
@@ -211,26 +212,26 @@ namespace testbench
           #ifdef DBG_TESTBENCH_H
               std::cout << "TESTBENCH_H - tick()" << std::endl;
           #endif
-                clock::simtime_t time;
 
                 //There should be at least 1 clock
                 assert (!_clkMgr->empty());
 
-                //eval logic and tick clock(s)
-                _core->eval();
-                time = _clkMgr->tick();
-                _core->eval();
-
-
+                /*
+                 * This is the correct order
+                 * 1. trace->dump (previously evaluated values)
+                 * 2. toggle clock and update time
+                 *    this resumes any waiting routines
+                 * 3. eval design (this causes all @posedge to trigger)
+                 */
                 if (_trace)
                 {
-                    //apparently internal resolution is 1000x Verilator's VCD dump
-                    _trace->dump( (vluint64_t)(time.ns() *1000.0) );
+                    clock::simtime_t time = _clkMgr->getTime();
+                    _trace->dump( (vluint64_t)(time.ns() * ratioTestbenchToVerilator) );
                 } 
 
-                #ifdef DBG_TESTBENCH_H
-                    std::cout << "TESTBENCH_H - Tick: " << time << "\n";
-                #endif
+                //tick() clocks and eval logic
+                _clkMgr->tick();
+                eval();
             }
 
 
