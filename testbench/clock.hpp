@@ -58,7 +58,7 @@ namespace testbench
 namespace clock
 {
 
-#define DBG_CLOCK_H
+//#define DBG_CLOCK_H
 
     /**
      * @class cClock
