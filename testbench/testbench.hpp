@@ -218,11 +218,17 @@ namespace testbench
 
                 /*
                  * This is the correct order
-                 * 1. trace->dump (previously evaluated values)
-                 * 2. toggle clock and update time
+                 * 1. eval design (this causes all @posedge to trigger)
+                 * 2. trace->dump (previously evaluated values)
+                 * 3. toggle clock and update time
                  *    this resumes any waiting routines
-                 * 3. eval design (this causes all @posedge to trigger)
+                 * 4. eval design (this causes all @posedge to trigger)
                  */
+
+                //eval logic
+                eval();
+
+                //dump trace
                 if (_trace)
                 {
                     clock::simtime_t time = _clkMgr->getTime();
