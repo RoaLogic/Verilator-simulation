@@ -5,7 +5,7 @@
 //   |  |\  \ ' '-' '\ '-'  |    |  '--.' '-' ' '-' ||  |\ `--.    //
 //   `--' '--' `---'  `--`--'    `-----' `---' `-   /`--' `---'    //
 //                                             `---'               //
-//    Base Class for a single Test                                 //
+//    Base Class for a Task                                        //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
@@ -33,31 +33,26 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 /*!
- * @file test.hpp
+ * @file task.hpp
  * @author Richard Herveille
  * @brief Test object
- * @version 0.1
- * @date 30-apr-2023
+ * @version 0.2
+ * @date 16-may-2023
  * @copyright See beginning of file
  */
 
-#ifndef TEST_HPP
-#define TEST_HPP
+#ifndef TASKS_HPP
+#define TASKS_HPP
 
-//Ugh ... MacOS/Clang uses 'experimental'
-#ifdef __APPLE__
 #include <coroutine>
-#else
-#include <coroutine>
-#endif
-
 #include <cassert>
+#include <clock.hpp>
 
 namespace RoaLogic
 {
 namespace testbench
 {
-namespace test
+namespace tasks
 {
     /**
      * @brief Function headers, typedefs, and defines to simplify test creation
@@ -68,8 +63,8 @@ namespace test
     
 
     //type definition for clocked tests
-    typedef coyieldReturn_t<cClock*> coyieldReturnClock_t;
-    typedef sCoRoutineHandler<coyieldReturnClock_t> clockedTest_t;
+    typedef coyieldReturn_t<clock::cClock*> coyieldReturnClock_t;
+    typedef sCoRoutineHandler<coyieldReturnClock_t> clockedTask_t;
 
 
     //Macros for clockedTest
@@ -115,11 +110,11 @@ namespace test
 
 
     /**
-     * @class   cTest
+     * @struct  cCoRoutineHandler
      * @author  Richard Herveille
      * @brief   Test object 
-     * @version 0.1
-     * @date    4-may-2023
+     * @version 0.2
+     * @date    16-may-2023
      * 
      * @details Typically tests stimulate the DUT on a cycle by cycle basis
      *          Multiple test could be running at the same time (think transaction based verification)
@@ -169,9 +164,8 @@ namespace test
             //If final_suspend returns suspend_always then the object's state remains accessible
             //after the coroutine function finishes, but the object must be destroyed externally
             //Most notably .done() can not be called if the object is destroyed
-            //For a testbench test destroying the object sounds the correct approach, however
-            //we'll destroy the object in the destructor such that we can still use state
-            suspend_always final_suspend() noexcept { return {}; }
+            //For a testbench test destroying the object sounds the correct approach
+            suspend_never final_suspend() noexcept { return {}; }
 
             //Unhandled exception handler
             void unhandled_exception()
@@ -218,8 +212,11 @@ namespace test
         //destructor
         ~sCoRoutineHandler()
         {
+            //Let's not do that!!! In the new testbench setup the object gets immediately destroyed
+            //resulting in segfaults
+
             //destroy coroutine function
-            _h.destroy();
+            //_h.destroy();
         }
 
         //Did the co_routine function finish?

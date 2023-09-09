@@ -5,7 +5,7 @@
 //   |  |\  \ ' '-' '\ '-'  |    |  '--.' '-' ' '-' ||  |\ `--.    //
 //   `--' '--' `---'  `--`--'    `-----' `---' `-   /`--' `---'    //
 //                                             `---'               //
-//    Class for Verilator APB Bus Interface                        //
+//    Base Class for Verilator Bus Interface                       //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
@@ -33,84 +33,118 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 /*!
- * @file busapb.hpp
+ * @file businterface.hpp
  * @author Richard Herveille
- * @brief APB Bus Interface class
+ * @brief BusInterface base class
  * @version 0.1
  * @date 3-may-2023
  * @copyright See beginning of file
  */
 
-#ifndef BUSAPB_HPP
-#define BUSAPB_HPP
+#ifndef BUSINTERFACE_HPP
+#define BUSINTERFACE_HPP
 
-#define BUSAPB_HPP
+#define BUSINTERFACE_HPP
+
+#include <uniqueid.hpp>
+#include <tasks.hpp>
 
 namespace RoaLogic
 {
 namespace bus
 {
+    using namespace RoaLogic::testbench::tasks;
+
     /**
-     * @class cBusAPB
+     * @class cBusInterface
      * @author Richard Herveille
-     * @brief APB Bus Interface Class
+     * @brief Template base class for a bus-interface
      * @version 0.1
      * @date 3-may-2023
      *
-     * @details This is a class to drive an APB4 bus in a Verilator testbench
+     * @details This is a template base class for testbench bus-interfaces
      * 
      */
-    template <typename PADDR_t = uint8_t,
-              typename PDATA_t = uint8_t> class cBusAPB4 : cBusBase
+    template <typename addrT = unsigned long,
+              typename dataT = unsigned char> class cBusInterface : public common::cUniqueId
     {
-        private:
-          uint8_t& _PCLK;
-          uint8_t& _PSEL;
-          uint8_t& _PENABLE;
-          PADDR_t& _PADDR;
-          uint8_t& _PWRITE;
-          PDATA_t& _PWDATA;
-          PDATA_t& _PRDATA;
-          uint8_t& _PREADY;
-          uint8_t& _PSLVERR;
-
         public:
+            bool _busy;
+            bool _error;
+
             /**
-             * @brief Construct a new cBusInterface object
+             * @brief Constructor
              */
-            cBusAPB4(uint8_t& pclk,
-                     uint8_t& psel,
-                     uint8_t& penable,
-                     PADDR_t& paddr,
-                     uint8_t& pwrite,
-                     PDATA_t& pwdata,
-                     PDATA_t& prdata,
-                     uint8_t& pready,
-                     uint8_t& pslverr) :
-                     _PCLK    (pclk   ),
-                     _PSEL    (psel   ),
-                     _PENABLE (penable),
-                     _PADDR   (paddr  ),
-                     _PWRITE  (pwrite ),
-                     _PWDATA  (pwdata ),
-                     _PRDATA  (prdata ),
-                     _PREADY  (pready ),
-                     _PSLVERR (pslverr) {};
+            cBusInterface() : _busy(false), _error(false) { }
 
 
             /**
-             * @brief Destroy the cBusInterface
+             * @brief Destroy the cBusBase object
              */
-            virtual ~cBusAPB4(void) {};
+            virtual ~cBusInterface() {}
 
 
             /**
-             * @brief Perform a Single Read Transaction on the bus
+             * @brief Denote start of transaction
+             */
+            virtual void transactionStart() { _busy=true; }
+
+
+            /**
+             * @brief Denote end of transaction
+             */
+            virtual void transactionEnd() { _busy=false; }
+
+
+            /**
+             * @brief Is a transaction in progress?
              *
-             * @param address[in] Address to read from
-             * @return            Data read
+             * @return true when a transaction is in progress
              */
-            virtual PDATA_t read(PADDR_t address) { return 0; };
+            virtual bool busy() { return _busy; }
+
+
+            /**
+             * @brief Has current transaction completed?
+             *
+             * @return true when the current transaction completed
+             */
+            virtual bool done() { return !_busy; }
+
+
+            /**
+             * @brief Bus transacted terminated with/due to error?
+             *
+             * @return true when the bus transaction terminated with/due to an error
+             */
+            virtual bool error() { return _error; }
+
+
+            /**
+             * @brief Reset bus
+             *
+             * @param duration Number of cycles to assert the reset signal.
+             *                 The default duration is 1 cycle
+             */
+            virtual clockedTask_t reset(unsigned duration=1) =0;
+
+
+            /**
+             * @brief Idles the bus
+             *
+             * @param duration Number of idle cycles
+             *                 The default is 1 cycle
+             */
+            virtual clockedTask_t idle(unsigned duration=1) =0;
+
+
+            /**
+             * @brief Perform a single read transaction on the bus
+             *
+             * @param address     Address to read from
+             * @param data        Reference to databuffer to store the data read from the bus
+             */
+            virtual clockedTask_t read(addrT address, dataT& data) =0;
 
 
             /**
@@ -120,16 +154,16 @@ namespace bus
              * @param burstCount[in] Lenght of burst
              * @result               Array of read data
              */
-            virtual PDATA_t* burstRead(PADDR_t address, unsigned burstCount) { return NULL; }
+            virtual clockedTask_t burstRead(addrT address, dataT* buffer, unsigned burstCount) { co_return; }
 
 
             /**
-             * @brief Perform a Write Transaction on the bus
+             * @brief Perform a single write transaction on the bus
              *
              * @param address[in]  Address to write to
              * @param data[in]     Data to write
              */
-            virtual void write(PADDR_t address, PDATA_t data) {};
+            virtual clockedTask_t write(addrT address, dataT data) =0;
 
 
             /**
@@ -138,7 +172,7 @@ namespace bus
              * @param address[in]  Start address of burst
              * @param data[in]     Pointer to Data to write
              */
-            virtual void burstWrite(PADDR_t address, unsiged burstCount, PDATA_t* data) {};
+            virtual clockedTask_t burstWrite(addrT address, dataT* buffer, unsigned burstCount) { co_return; }
     };
 }
 }

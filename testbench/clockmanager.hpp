@@ -56,6 +56,8 @@
 //For std::cout
 #include <iostream>
 
+//#define DBG_CLOCKMANAGER_H
+ 
 namespace RoaLogic
 {
 namespace testbench
@@ -76,7 +78,7 @@ namespace clock
     {
         private:
             std::vector<cClock*> *_clocks;   //Collection holding all clocks
-            simtime_t _time; 
+            simtime_t _time;
 
         public:
 
@@ -108,6 +110,7 @@ namespace clock
                 delete _clocks;
                 _clocks = NULL;
             }
+
 
 
             /**
@@ -189,6 +192,9 @@ namespace clock
              */
             virtual simtime_t tick(void)
             {
+          #ifdef DBG_CLOCKMANAGER_H
+            std::cout << "CLOCKMANAGER_H - tick()" << std::endl;
+          #endif
                 //Current minimum time to next event = maximum float value
                 simtime_t minTimeToNextEvent = simtime_t::max();
 
@@ -202,8 +208,8 @@ namespace clock
                         minTimeToNextEvent = timeToNextEvent;
                     }             
 
-            #ifdef DBG_VCLOCKMANAGER_H
-                    std::cout << "CCLOCKMANAGER_H - tick: " << clk->getTimeToNextEvent() << "," << MinTimeToNextEvent << "\n";
+            #ifdef DBG_CLOCKMANAGER_H
+                    std::cout << "CLOCKMANAGER_H - tick: " << clk->getTimeToNextEvent() << "," << minTimeToNextEvent << "\n";
             #endif
 
                 }

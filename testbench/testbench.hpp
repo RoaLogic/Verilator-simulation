@@ -57,14 +57,15 @@
 //For std::cout
 #include <iostream>
 
-#define DBG_TESTBENCH_H
+//#define DBG_TESTBENCH_H
 
 namespace RoaLogic
 {
 namespace testbench
 {
+    //apparently internal testbench resolution is 1000x verilator resolution/respresentation
+    const long double ratioTestbenchToVerilator = 1000.0;
 
-    using namespace clock;
 
     /**
      * @class cTestBench
@@ -82,13 +83,13 @@ namespace testbench
     template <class VM> class cTestBench
     {
         private:
-            VerilatedContext* _context;  // Verilator Context 
-            VerilatedVcdC*    _trace;    // Trace file           
-            cClockManager*    _clkMgr;   // Clock Manager
-            bool              _finished; // Testbench finished
+            VerilatedContext*      _context;  // Verilator Context
+            VerilatedVcdC*         _trace;    // Trace file 
+            clock::cClockManager*  _clkMgr;   // Clock Manager
+            bool                   _finished; // Testbench finished
 
         protected:
-            VM*               _core;     //Verilator Model to test
+            VM*                    _core;     //Verilator Model to test
     
         public:
 
@@ -104,7 +105,7 @@ namespace testbench
                 Verilated::traceEverOn(true);
                 _core = new VM;
                 //Create new Clock Manager
-                _clkMgr = new cClockManager();
+                _clkMgr = new clock::cClockManager();
             }
 
 
@@ -117,7 +118,7 @@ namespace testbench
                 close();
 
                 //save time before we destroy object
-                simtime_t time = getTime();
+                clock::simtime_t time = getTime();
 
                 //Final Cleanup
                 _core->final();
@@ -142,9 +143,6 @@ namespace testbench
                     _trace = new VerilatedVcdC;
                     _core->trace(_trace, 99);
                     _trace->open(vcdname);
-
-                    //first data dump at time 0
-                    _trace->dump(0);
                 }
             }
 
@@ -180,7 +178,7 @@ namespace testbench
              * @param[in] HighPeriod  The period that the pin shall be high
              * @return a pointer to the clock object
              */
-            virtual cClock* addClock(uint8_t& Clock, simtime_t LowPeriod, simtime_t HighPeriod) const
+            virtual clock::cClock* addClock(uint8_t& Clock, clock::simtime_t LowPeriod, clock::simtime_t HighPeriod) const
             {
           #ifdef DBG_TESTBENCH_H
               std::cout << "TESTBENCH_H - addClock (" << LowPeriod << "," << HighPeriod << ")\n";
@@ -197,7 +195,7 @@ namespace testbench
              * @param[in] Period      The period of the clock pin
              * @return a pointer to the clock object 
              */
-            virtual cClock* addClock(uint8_t& Clock, simtime_t Period) const
+            virtual clock::cClock* addClock(uint8_t& Clock, clock::simtime_t Period) const
             {
                 return _clkMgr->add(Clock, Period);
             }
@@ -211,27 +209,35 @@ namespace testbench
              */
             virtual void tick(void) const
             {
-                simtime_t time; 
+          #ifdef DBG_TESTBENCH_H
+              std::cout << "TESTBENCH_H - tick()" << std::endl;
+          #endif
 
                 //There should be at least 1 clock
                 assert (!_clkMgr->empty());
 
-                //eval logic and tick clock(s)
-                _core->eval();
-                time = _clkMgr->tick();
-                _core->eval();
+                /*
+                 * This is the correct order
+                 * 1. eval design (this causes all @posedge to trigger)
+                 * 2. trace->dump (previously evaluated values)
+                 * 3. toggle clock and update time
+                 *    this resumes any waiting routines
+                 * 4. eval design (this causes all @posedge to trigger)
+                 */
 
+                //eval logic
+                eval();
 
+                //dump trace
                 if (_trace)
                 {
-std::cout << "trace@" << (vluint64_t)(time.ns() *1000.0) << std::endl;
-                    //apparently internal resolution is 1000x Verilator's VCD dump
-                    _trace->dump( (vluint64_t)(time.ns() *1000.0) );
+                    clock::simtime_t time = _clkMgr->getTime();
+                    _trace->dump( (vluint64_t)(time.ns() * ratioTestbenchToVerilator) );
                 } 
 
-                #ifdef DBG_TESTBENCH_H
-                    std::cout << "TESTBENCH_H - Tick: " << time << "\n";
-                #endif
+                //tick() clocks and eval logic
+                _clkMgr->tick();
+                eval();
             }
 
 
@@ -240,7 +246,7 @@ std::cout << "trace@" << (vluint64_t)(time.ns() *1000.0) << std::endl;
              * 
              * @return simulation runtime
              */
-            virtual simtime_t getTime(void) const
+            virtual clock::simtime_t getTime(void) const
             {
               return _clkMgr->getTime();
             }
