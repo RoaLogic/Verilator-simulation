@@ -50,16 +50,94 @@ namespace RoaLogic
 {
 namespace common
 {
-    eLogPriority cLog::_logPriority = eLogPriority::Error;
-    bool cLog::_initialized = false;
-    bool cLog::_saveToFile = false;
-    std::string cLog::_logFileName  = "";
+    cLog* cLog::_myPointer = nullptr;
 
-    std::mutex cLog::_logMutex;
+    /**
+     * @brief Construct a new cLog object
+     * @details This function constructs the object for the singleton
+     * 
+     */
+    cLog::cLog()
+    {
 
-    uint32_t cLog::_debugFilter = 0ul;
-    uint32_t cLog::_debugLevel = 0ul;
+    }
 
+    /**
+     * @brief Get the instance of the singleton
+     * @details This function gets the instance of the logger
+     * 
+     * If no logger has been created, then it creates a new cLog
+     * 
+     * @return cLog* Pointer to the singleton object
+     */
+    cLog* cLog::getInstance()
+    {
+        if(_myPointer == nullptr)
+        {
+            _myPointer = new cLog();
+        }
+
+        return _myPointer;
+    }
+
+    /**
+     * @brief Convert byte to eLogPriority
+     * 
+     * @param prio          The priority to convert
+     * @return eLogPriority 
+     */
+    eLogPriority cLog::convertPriority(uint8_t prio)
+    {
+        eLogPriority returnValue;
+
+        switch ((uint8_t)prio)
+        {
+        case 0:
+            returnValue = eLogPriority::Debug;
+            break;
+        case 1:
+            returnValue = eLogPriority::Log;
+            break;
+        case 2:
+            returnValue = eLogPriority::Info;
+            break;
+        case 3:
+            returnValue = eLogPriority::Warning;
+            break;
+        case 4:
+            returnValue = eLogPriority::Error;
+            break;
+        
+        default:
+            returnValue = eLogPriority::Fatal;
+            break;
+        }
+
+        return returnValue;
+    }
+
+    /**
+     * @brief 
+     * 
+     * @param aPriority 
+     * @param fileName 
+     */
+    void cLog::init(uint8_t aPriority, std::string fileName)
+    {
+        init(convertPriority(aPriority), fileName);
+    }
+
+    /**
+     * @brief Initialize the logger class
+     * @details This function initializes the logger
+     * with the given priority
+     * 
+     * If a filename is given it will log all data to the file
+     * If no file name is given it is printed to the terminal
+     * 
+     * @param aPriority     The log priority to run
+     * @param fileName      The filename/path to store the log
+     */
     void cLog::init(eLogPriority aPriority, std::string fileName)
     {
         if(!_initialized)
@@ -69,64 +147,137 @@ namespace common
             if(fileName != "")
             {
                 _saveToFile = true;
+                _fileStream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+                try
+                {
+                    _fileStream.open(fileName, std::fstream::out |std::fstream::app);
+                }
+                catch(const std::ifstream::failure e)
+                {
+                    throw std::runtime_error(std::string("File open failed: %s", e.what()));
+                }               
             }
             else
             {
                 _saveToFile = false;
             }
 
+            _logFileName = fileName;
             _logPriority = aPriority;
             _initialized = true;
             _logMutex.unlock();
         }
     }
 
-    void cLog::logMessage(eLogPriority aPriority, std::string message)
+    /**
+     * @brief Close the logger and if used close the file
+     * 
+     */
+    void cLog::close()
+    {
+        if(_saveToFile)
+        {
+            try
+            {
+                _fileStream.close();
+            }
+            catch(const std::ifstream::failure e)
+            {
+                throw std::runtime_error(std::string("File open failed: %s", e.what()));
+            }             
+        }
+    }
+
+    /**
+     * @brief Append data to the stream
+     * @details This function appends data to the selected stream
+     * It makes sure that the logger is initialized and checks if the 
+     * currently log level is correct.
+     * 
+     * @param msg 
+     */
+    void cLog::appendStream(std::string msg)
     {
         if(_initialized)
         {
-            if(aPriority >= _logPriority)
+            if (_currentMsgPriority == eLogPriority::Fatal)
             {
-                _logMutex.lock();
-
+                throw std::runtime_error(msg);
+            }
+            else
+            {
                 if(_saveToFile)
                 {
+                    _logMutex.lock();
 
+                    try
+                    {
+                        _fileStream << msg;
+                    }
+                    catch(const std::ifstream::failure e)
+                    {
+                        throw std::runtime_error(std::string("File failure: %s", e.what()));
+                    }                    
+
+                    _logMutex.unlock();
                 }
                 else
                 {
-                    std::cout << message;
+                    std::cout << msg;
                 }
-
-                _logMutex.unlock();
             }
         }
     }
 
-    void cLog::debug(std::string message)
+    /**
+     * @brief Log function 
+     * @details Log function which must be appended with the corresponding log string
+     * 
+     * It will check and set the right priority and then print the corresponding log level string
+     * 
+     * @param aPriority 
+     * @return cLog& 
+     */
+    cLog& cLog::log(eLogPriority aPriority)
     {
+        if(aPriority >= _logPriority)
+        {
+            _currentMsgPriority = aPriority;
 
-    }
-    
-    void cLog::info(std::string message)
-    {
-        logMessage(eLogPriority::Info, "Info: " + message + "\n");
+            switch (aPriority)
+            {
+            case eLogPriority::Debug   : 
+                appendStream("[DEBUG] ");
+                break;
+            case eLogPriority::Error   : 
+                appendStream("[ERROR] ");
+                break;
+            case eLogPriority::Info    : 
+                appendStream("[INFO] ");
+                break;
+            case eLogPriority::Log     : 
+                appendStream("[LOG] ");
+                break;
+            case eLogPriority::Warning : 
+                appendStream("[WARNING] ");
+                break;   
+            case eLogPriority::Fatal :
+                // Do nothing, will throw error message
+                break;            
+           
+            default:
+                break;
+            } 
+        }
+        else
+        {
+            _currentMsgPriority = eLogPriority::Debug;
+        }
+
+        return *this;
     }
 
-    void cLog::warning(std::string message)
-    {
-        logMessage(eLogPriority::Warning, "Warning: " + message + "\n");
-    }
-
-    void cLog::error(std::string message)
-    {
-        logMessage(eLogPriority::Error, "Error: " + message + "\n");
-    }
-
-    void cLog::fatal(std::string message)
-    {
-        throw std::runtime_error(std::string("Fatal: ") + message + "\n");
-    }
 }
 }
 

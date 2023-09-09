@@ -5,7 +5,7 @@
 //   |  |\  \ ' '-' '\ '-'  |    |  '--.' '-' ' '-' ||  |\ `--.    //
 //   `--' '--' `---'  `--`--'    `-----' `---' `-   /`--' `---'    //
 //                                             `---'               //
-//    Header file for logging                                      //
+//    No value option derived from base option                        //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
@@ -33,104 +33,110 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 /**
- * @file log.hpp
+ * @file novalueoptions.hpp
  * @author Bjorn Schouteten
  * @brief 
  * @version 0.1
- * @date 9 may 2023
+ * @date 09 september 2023
  * @copyright See beginning of file
  * 
  */
 
-#ifndef LOG_HPP
-#define LOG_HPP
+#ifndef NOVALUEOPTIONS_HPP
+#define NOVALUEOPTIONS_HPP
 
-#include <mutex>
-#include <iostream>
-#include <fstream>
-
-#define DEBUG cLog::getInstance()->log(eLogPriority::Debug)
-#define LOG cLog::getInstance()->log(eLogPriority::Log)
-#define INFO cLog::getInstance()->log(eLogPriority::Info)
-#define WARNING cLog::getInstance()->log(eLogPriority::Warning)
-#define ERROR cLog::getInstance()->log(eLogPriority::Error)
-#define FATAL cLog::getInstance()->log(eLogPriority::Fatal)
+#include <programoptions.hpp>
+#include <log.hpp>
 
 namespace RoaLogic
 {
 namespace common
 {
-    
-    enum class eLogPriority
+
+    class cNoValueOption : public cOption
     {
-        Debug,
-        Log,
-        Info,
-        Warning,
-        Error,
-        Fatal
-    };
-
-    /**
-     * @brief 
-     * 
-     */
-    class cLog
-    {
-        private:
-        eLogPriority _logPriority = eLogPriority::Error;
-        eLogPriority _currentMsgPriority = eLogPriority::Debug;
-        std::string _logFileName = "";
-        bool _initialized = false;
-        bool _saveToFile = false;
-
-        std::fstream _fileStream;
-        std::mutex _logMutex;
-        static cLog* _myPointer;
-
-        cLog();
-
-        cLog& operator=(const cLog&){ return *this; };  // assignment operator is private
-
-        void appendStream(std::string msg);
-        eLogPriority convertPriority(uint8_t prio); 
+        protected:
+            void parse(cOptionName what_name, const char* value);
+            void clear();
+            bool _state;
 
         public:
 
-        static cLog* getInstance();
+        cNoValueOption(const std::string& aShortOption, 
+                     const std::string& aLongOption, 
+                     const std::string& aDescription, 
+                     bool defaultState);
 
-        void init(uint8_t aPriority, std::string fileName);
-        void init(eLogPriority aPriority, std::string fileName);
-        void close();
-
-        cLog& log(eLogPriority aPriority);
-        
-        template <typename T>
-        cLog& operator<<(const T& msg);
+        eArgument getArgumentType();
+        bool isSet();
+        size_t optionCount();
     };
-
+    
     /**
-     * @brief Operator overload to append to the log output
+     * @brief Construct a new value option object
      * 
-     * @tparam T        
-     * @param msg       Message to put out
-     * @return cLog&    Pointer to the current cLog object
+     * @param aShortOption the option's short name. Must be empty or one character. 
+     * @param aLongOption the option's long name. Can be empty.
+     * @param aDescription the Option's description that will be shown in the help message
+     * @param defaultState the Option's default state
      */
-    template <typename T>
-    cLog& cLog::operator<<(const T& msg)
+    cNoValueOption::cNoValueOption( const std::string& aShortOption, 
+                                const std::string& aLongOption, 
+                                const std::string& aDescription, 
+                                bool defaultState) :
+        cOption(aShortOption, aLongOption, aDescription)
     {
-        if(_currentMsgPriority >= _logPriority )
-        {
-            std::string messageString;
-
-            messageString += msg;
-
-            this->appendStream(messageString);
-        }
-
-        return *this;
+        _state = defaultState;
     }
 
+    size_t cNoValueOption::optionCount()
+    {
+        return 1;
+    }
+
+    /**
+     * @brief Check if the option is set
+     * 
+     * @return true     Option is set
+     * @return false    option is not set
+     */
+    bool cNoValueOption::isSet()
+    {
+        return _state;
+    }
+
+    /**
+     * @brief Get the option's argument type
+     * 
+     * @tparam T 
+     * @return eArgument    The argument type as enum
+     */
+    eArgument cNoValueOption::getArgumentType()
+    {
+        return eArgument::no;
+    }
+
+    /**
+     * @brief Parse the option
+     * @details Since there is nothing to parse, 
+     * just set the state active, since the value is set
+     * 
+     * @param what_name     Name of the option
+     * @param value         The value, which is ignored
+     */
+    inline void cNoValueOption::parse(cOptionName what_name, const char* value)
+    {
+        _state = true;
+    }
+
+    /**
+     * @brief Clear the set option
+     * 
+     */
+    void cNoValueOption::clear()
+    {
+        _state = false;
+    }
 }
 }
 

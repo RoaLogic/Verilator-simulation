@@ -47,22 +47,65 @@
 
 #include <log.hpp>
 #include <vector>
+#include <memory>
 
 namespace RoaLogic
 {
 namespace common
 {
 
-    struct sProgramOption
+    enum class eArgument
     {
-        bool valid;
-        bool optionHasSecond;
-        std::string shortOption;
-        std::string longOption;
-        std::string value;
-        std::string description;
+        no = 0,   // option never takes an argument
+        required, // option always requires an argument
+        optional  // option may take an argument
     };
+
     
+    /// Option name type. Used in invalid_option exception.
+    /**
+     * unspecified: not specified
+     * short_name:  The option's short name
+     * long_name:   The option's long name
+     */
+    enum class cOptionName
+    {
+        unspecified,
+        shortOption,
+        longOption
+    };
+
+
+    class cOption
+    {
+        private:
+            friend class cProgramOptions;
+
+        protected:
+            std::string _shortOption;
+            std::string _longOption;
+            std::string _description;
+
+            virtual void parse(cOptionName what_name, const char* value) = 0;
+            virtual void clear() = 0;
+
+        public:
+
+            cOption(const std::string aShortOption, 
+                    const std::string aLongOption, 
+                    std::string description);
+
+            virtual ~cOption() = default;
+
+            char getShortName();
+            std::string getLongName();
+            std::string getDescription();
+
+            virtual eArgument getArgumentType() = 0;
+            virtual size_t optionCount() = 0;
+            virtual bool isSet() = 0;
+
+    };
 
     /**
      * @brief 
@@ -72,20 +115,50 @@ namespace common
     {
         private:
         static const uint32_t _cMaxArguments = 20;
-        std::vector <sProgramOption> _options;
+
+        std::string _description;
+        std::vector <std::string> _unrecognizedOptions;
+        std::vector <cOption*> _options;
+
+        cOption* findOption(const std::string& aLongName);
+        cOption* findOption(char aShortName);
 
         public:
-        cProgramOptions();
+        cProgramOptions(std::string aDescription = "");
 
-        ~cProgramOptions();
+        ~cProgramOptions() = default;
 
-        int parse(int argc, char* argv[]);
+        void parse(int argc, char* argv[]);
 
-        int add(sProgramOption aOption);
-        int add(std::string aLongOption, std::string description, bool hasSecondOption);
-        int add(std::string aShortOption, std::string aLongOption, std::string description , bool hasSecondOption);
+        int add(cOption* aOption);
+
+        inline std::string getDescription(void)
+        {
+            return _description;
+        }
+
+        inline std::vector<std::string>& unknownOptions()
+        {
+            return _unrecognizedOptions;
+        }
+
+        void printKnownOptions()
+        {
+            std::cout << _description << '\n';
+
+            std::cout << "Options: \n";
+
+            for (auto & option : _options) 
+            {
+                std::cout << option->getShortName() << "\t" << 
+                             option->getLongName() << "\t\t" << 
+                             option->getDescription() << "\n";
+            }
+        }
+
 
     };
+
 
 }
 }
