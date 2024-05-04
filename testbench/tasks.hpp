@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -32,14 +32,6 @@
 //   POSSIBILITY OF SUCH DAMAGE.                                   //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-/*!
- * @file task.hpp
- * @author Richard Herveille
- * @brief Test object
- * @version 0.2
- * @date 16-may-2023
- * @copyright See beginning of file
- */
 
 #ifndef TASKS_HPP
 #define TASKS_HPP
@@ -54,89 +46,19 @@ namespace testbench
 {
 namespace tasks
 {
-    /**
-     * @brief Function headers, typedefs, and defines to simplify test creation
-     */
-    enum class coyieldEvent_t;
-    template <typename T> struct coyieldReturn_t;
-    template <typename T> struct sCoRoutineHandler;
-    
-
-    //type definition for clocked tests
-    typedef coyieldReturn_t<clock::cClock*> coyieldReturnClock_t;
-    typedef sCoRoutineHandler<coyieldReturnClock_t> clockedTask_t;
-
-
-    //Macros for clockedTest
-    #define waitPosedge(clk) (co_yield (coyieldReturnClock_t){clk,coyieldEvent_t::clockPosedge})
-    #define waitNegedge(clk) (co_yield (coyieldReturnClock_t){clk,coyieldEvent_t::clockNegedge})
-
-
-    /**
-     * @enum    class coyieldEvent_t
-     * @author  Richard Herveille
-     * @brief   Enumeration class holding trigger event types
-     * @version 01
-     * @date    5-may-2023
-     *
-     * @details Enumeration class holding the different type of events that are supported
-     *          The co_routine function provides the type to the yield_value routine
-     *          The yield_value routine then determines which action to take for the event
-     */
-    enum class coyieldEvent_t 
-    {
-        clockPosedge,
-        clockNegedge
-    };
-
-
-
-    /**
-     * @struct  coyieldReturn_t
-     * @author  Richard Herveille
-     * @brief   co_yield return struct
-     * @version 0.1
-     * @date    5-may-2023
-     *
-     * @details This struct holds the data co_yield provides to the yield_value routine
-     */
-    template <typename T>
-    struct coyieldReturn_t 
-    {
-        T              object;
-        coyieldEvent_t event;
-    };
-
-
+    using namespace std;
 
     /**
      * @struct  cCoRoutineHandler
-     * @author  Richard Herveille
+     * @author  Richard Herveille, Bjorn Schouteten
      * @brief   Test object 
-     * @version 0.2
-     * @date    16-may-2023
      * 
      * @details Typically tests stimulate the DUT on a cycle by cycle basis
      *          Multiple test could be running at the same time (think transaction based verification)
-     *          This implies that multiple tests must be able to stop and resume, typically on a clock ede
-     *          To facilitate this tests are implemented as coroutines which yield when they need to wait
-     *          for an event; typically rising or falling edge of the clock
-     *          The posedge() and negedge() routines yield the test and register the test with the
-     *          event queues in the clock class. When the clock toggles it calls the routines in the
-     *          respective queues, thereby resuming the tests.
+     *          This implies that multiple tests must be able to stop and resume, typically on a clock edge
      */
-
-    using namespace std;
-
-    //std::suspend_never::await_ready always returns false
-    //std::suspend_always::await_ready always returns true
-
-    //"co_await" suspends function
-    //"co_yield expr" expands to "co_await p.yield_value(expr)" where 'p' is the promise object
-    //"co_return expr" returns final value expr. This can/should be the result of the test (pass/fail)
-
     template <typename T>
-    struct sCoRoutineHandler 
+    struct sCoRoutineHandler
     {
         struct promise_type;
         using handle_t = coroutine_handle<promise_type>;
@@ -144,114 +66,250 @@ namespace tasks
         //MUST include nested object type promise_type
         struct promise_type
         {
-            T _value;                       //This variable is accessible from the coroutine function
-            std::exception_ptr _exception;  //Store exception pointer
+            T _myValue;                     //!< This variable is accessible from the coroutine function
+            std::exception_ptr _exception;  //!< Store exception pointer
+            coroutine_handle<> waitingCoroutine;
 
-            //MUST include get_return_object()
-            //the result of get_return_object() is the return value of the coroutine function
-            sCoRoutineHandler get_return_object()
+            /**
+             * @brief Get the return object
+             * @details This function returns the created heap memory object 
+             * of the coroutine
+             * 
+             * It must be included in the promise_type
+             * 
+             * @return sCoRoutineHandler<T>     Returns the heap memory object which is created
+             */
+            sCoRoutineHandler<T> get_return_object()
             {
-                return sCoRoutineHandler(handle_t::from_promise(*this));
+                return {coroutine_handle<promise_type>::from_promise(*this)};
             }
 
-            //suspend_always suspends the coroutine function immediatly on entry
-            //suspend_never actually runs the coroutine function until co_wait()
-            //For a testbench test, running the coroutine function sounds the correct approach
+            /**
+             * @brief Initial suspend
+             * @details This function is called at the beginning of a coroutine and determines
+             * if the coroutine should suspend at the beginning and wait for a resume or that it
+             * continues untill any of the co_expr is used.
+             * 
+             * When returning suspend_never the coroutine will run until a co_expr
+             * When returning suspend_always the coroutine will directly be suspended
+             * 
+             * For testbenches we want the coroutine function to run until a co_expr and therefore 
+             * we return suspend_never
+             * 
+             * @return suspend_never 
+             */
             suspend_never initial_suspend() { return {}; }
 
-            //If final_suspend returns suspend_never then the object is automatically destroyed
-            //however the state is not accessible then anymore (obviously)
-            //If final_suspend returns suspend_always then the object's state remains accessible
-            //after the coroutine function finishes, but the object must be destroyed externally
-            //Most notably .done() can not be called if the object is destroyed
-            //For a testbench test destroying the object sounds the correct approach
-            suspend_never final_suspend() noexcept { return {}; }
+            /**
+             * @brief final suspend
+             * @details This function is called at the end of a coroutine, it is used
+             * to cleanup the coroutine. It always returns a awaitable type, where it has 
+             * predefined behaviour for the standard awaitables.
+             * 
+             * When final_suspend returns suspend_never then the object is automatically destroyed
+             * When final_suspend returns suspend_always then the object's state remains accessible
+             * 
+             * It's also possible to return a own awaitable, which is the case in this function,
+             * it checks if there is a waiting coroutine. If this is the case we return the 
+             * waiting coroutine, which is at this point resumed again. If there is no waiting
+             * coroutine we return noop_coroutine, this is a special coroutine handle that has
+             * no resume or destroy method, indicating to the coroutine that there is nothing 
+             * to resume and it should return to it's caller.
+             * 
+             * Do note that .done() cannot be called if the object is already destroyed, therefore 
+             * we can keep track of the final suspend state with the boolean _finished.
+             * 
+             * For testbenches we will keep the state, so that we can get the result of a coroutine 
+             * at the end.
+             * 
+             * @return auto
+             */
+            auto final_suspend() noexcept 
+            {
+                struct awaiter
+                {
+                    coroutine_handle<> waitingCoroutine;
+                    bool await_ready() const noexcept { return false;}
+                    void await_resume() const noexcept {}
 
-            //Unhandled exception handler
+                    coroutine_handle<> await_suspend(coroutine_handle<promise_type> h) const noexcept
+                    {
+                        return waitingCoroutine ? waitingCoroutine : std::noop_coroutine();
+                    }
+                };
+                
+                return awaiter{waitingCoroutine}; 
+            }
+
+            /**
+             * @brief unhandled exception
+             * @details This function handles a exception
+             * which occurs in the time of a coroutine. When this happens it stores
+             * the exception into the structure which can then be gotten to check 
+             * from outside of the promise type
+             */
             void unhandled_exception()
             {
-                //store exception (so we can throw it later on)
                 _exception = std::current_exception();
             }
 
-            //called when co_yield (expr) is called
-            template<std::convertible_to<T> From>
-            suspend_always yield_value(From&& val)
+            /**
+             * @brief yield_value
+             * @details This function receives the value passed to co_yield.
+             * It will receive the value and store it in our object itself so it
+             * can be returned from the promise_type back to the user
+             * 
+             * This function must return either suspend_always or suspend_never,
+             * where both mean the same as for initial_suspend.
+             * 
+             * 
+             * @param val               Value passed by co_yield <value>
+             * @return suspend_always   Always suspend the coroutine
+             */
+            
+            suspend_always yield_value(T value)
             {
-                //store value here into promise_type variable _value
-                //_value = std::forward<From>(val);
-                switch (val.event)
-                {
-                  case coyieldEvent_t::clockPosedge:
-                           val.object->addWaitForPosedge(handle_t::from_promise(*this));
-                           break;
-
-                  case coyieldEvent_t::clockNegedge:
-                           val.object->addWaitForNegedge(handle_t::from_promise(*this));
-                           break;
-                }
+                _myValue = value;
                 return {};
             }
 
-            /* !! Either return_void or return_value, but not both !! */
-     
-            //called when 'co_return' is called (note: not "co_return e") or if the
-            //coroutine function falls off the end (i.e. completes)
-            //CAUTION: falling of the end without a return_void() causes undefined behaviour!!!!
-            void return_void() {}
+            /**
+             * @brief return value
+             * @details This function is called just before final suspend and is used 
+             * to return a value from the user. A promise type must hold either
+             * void return_value() or void return_void() depending on how the coroutine 
+             * is used. 
+             * 
+             * return_value() is used with "co_return e"
+             * return_void() is used with "co_return"
+             * 
+             * For our testbench we will use return_value so we can get test results
+             * from our test. (This can always be ignored)
+             * 
+             * CAUTION: falling of the end without a return_void() or return_value() 
+             * causes undefined behaviour!!!!
+             * 
+             * @param T The value which is returned of the coroutine
+             */
+            void return_value(T value) 
+            {
+                _myValue = value;
+            }
         };
 
+        handle_t _h; //!< Handle to coroutine
 
-        //Handle to coroutine
-        handle_t _h;
+        /**
+         * @brief Construct a new coroutine handle
+         * @details Constructor of the coroutine handler
+         * 
+         * @param h 
+         */
+        sCoRoutineHandler(handle_t h) : _h(h) {};
 
-        //constructor
-        //store handle to coroutine function
-        sCoRoutineHandler (handle_t h) : _h(h) {};
-
-        //destructor
+        /**
+         * @brief Destroy the coroutine object
+         * @details This function destroys the object
+         * 
+         * Destroy the object if there is a object
+         * 
+         */
         ~sCoRoutineHandler()
         {
-            //Let's not do that!!! In the new testbench setup the object gets immediately destroyed
-            //resulting in segfaults
-
-            //destroy coroutine function
-            //_h.destroy();
+            if(_h)
+            {
+                _h.destroy();
+            }
         }
 
-        //Did the co_routine function finish?
+        /**
+         * @brief Check if the coroutine is done
+         * @details
+         * 
+         * This functions checks if the coroutine has finished, due that 
+         * final_suspend returns suspend_always we cannot call .done().
+         * Therefore the _finished is introduced in the promise type and 
+         * we can check accordingly.
+         * 
+         * @return true 
+         * @return false 
+         */
         explicit operator bool() 
         {
-            return !_h.done();
+            return _h.done(); // Use this when final_suspend returns suspend_never
+            //return _h.promise()._finished; // Use this when final_suspend returns suspend_always
         }
-    };
 
-
-    //Awaiter
-    template <typename PromiseType>
-    struct sGetPromise 
-    {
-        PromiseType *_p;
-
-        //If await_ready() returns true, then co_await does not suspend the function
-        //if await_ready() returns false, then await_suspend is called
-        constexpr bool await_ready() const noexcept { return false; }
-
-        //if await_suspend returns false, then co_await does not suspend the function
-        bool await_suspend(coroutine_handle<PromiseType> h) 
+        /**
+         * @brief Resume the coroutine at the last suspended point
+         * 
+         */
+        void resume()
         {
-            //store handle to promise object
-            _p = h.promise();
+            _h.resume();
+        }
 
-            //don't suspend function, because we want to get access to the promise object
-            //such that we can feedback values
+        /**
+         * @brief Get the Result 
+         * @details This function returns the value gotten from the 
+         * promise type. Or easier said, it returns the result of
+         * the coroutine. This can either be the result from 
+         * co_yield as well as co_return.
+         * 
+         * @attention When final_suspend returns suspend_always we cannot get 
+         * the value of the co_return expr. This value will then be changed, due
+         * that the promise is already deleted.
+         * 
+         * @return T    Returns coroutine value or false when there is no value
+         */
+        T getValue()
+        {
+            if (_h) 
+            {
+                return std::move(_h.promise()._myValue);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /**
+         * @brief The await ready function for the awaitable type
+         * 
+         * @return false    Always return false to suspend the coroutine
+         */
+        bool await_ready()
+        {
             return false;
         }
 
-        //await_resume provides the return value of co_await expression
-        constexpr PromiseType* await_resume() const noexcept 
+        /**
+         * @brief The await suspend function for the awaitable type
+         * @details This function suspends the coroutine and implements
+         * the needed logic. It stores the passed coroutine handle into the
+         * waitingCoroutine handle of our current promise type.
+         * 
+         * This can then be used to resume the coroutine that called co_await
+         * 
+         * @param h     The coroutine handle which calls the co_await
+         */
+        void await_suspend(std::coroutine_handle<> h)
         {
-            return _p;
+            _h.promise().waitingCoroutine = h;
+        }
+
+        /**
+         * @brief The await resume function for the awaitable type
+         * @details This function is called when the coroutine is resumed again
+         * It will return the result of the coroutine, which is placed in 
+         * the promise type.
+         * 
+         * @return auto     Returns the result of the coroutine
+         */
+        auto await_resume()
+        {
+            return std::move(_h.promise()._myValue);
         }
     };
 }

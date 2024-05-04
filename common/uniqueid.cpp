@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -32,18 +32,8 @@
 //   POSSIBILITY OF SUCH DAMAGE.                                   //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-/*!
- * @file uniqueid.cpp
- * @author Richard Herveille
- * @brief UniqueId base class
- * @version 0.1
- * @date 3-may-2023
- * @copyright See beginning of file
- */
-
 
 #include "uniqueid.hpp"
-
 
 //Initialize non-constant globalId
 std::atomic<unsigned long> RoaLogic::common::cUniqueId::_globalId{0};

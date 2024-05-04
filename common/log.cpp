@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -32,16 +32,6 @@
 //   POSSIBILITY OF SUCH DAMAGE.                                   //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-/**
- * @file log.cpp
- * @author Bjorn Schouteten
- * @brief 
- * @version 0.1
- * @date 9 may 2023
- * @copyright See beginning of file
- * 
- */
-
 
 #include <log.hpp>
 #include <iostream>
@@ -218,7 +208,7 @@ namespace common
                     catch(const std::ifstream::failure e)
                     {
                         throw std::runtime_error(std::string("File failure: %s", e.what()));
-                    }                    
+                    }
 
                     _logMutex.unlock();
                 }
@@ -247,25 +237,27 @@ namespace common
 
             switch (aPriority)
             {
-            case eLogPriority::Debug   : 
+            case eLogPriority::Debug   :
                 appendStream("[DEBUG] ");
                 break;
-            case eLogPriority::Error   : 
+            case eLogPriority::Error   :
                 appendStream("[ERROR] ");
                 break;
-            case eLogPriority::Info    : 
+            case eLogPriority::Info    :
                 appendStream("[INFO] ");
                 break;
-            case eLogPriority::Log     : 
+            case eLogPriority::Log     :
                 appendStream("[LOG] ");
                 break;
-            case eLogPriority::Warning : 
+            case eLogPriority::Warning :
                 appendStream("[WARNING] ");
                 break;   
             case eLogPriority::Fatal :
-                // Do nothing, will throw error message
-                break;            
-           
+                appendStream("[FATAL] ");
+                break;
+            case eLogPriority::Append :
+                break;
+
             default:
                 break;
             } 

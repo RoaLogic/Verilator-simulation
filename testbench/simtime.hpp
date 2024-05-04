@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -33,14 +33,6 @@
 //   more details.                                                 //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-/*!
- * @file SimTime.hpp
- * @author Richard Herveille
- * @brief Simulation time managment 
- * @version 0.1
- * @date 30-apr-2023
- * @copyright See beginning of file
- */
 
 #ifndef SIMTIME_HPP
 #define SIMTIME_HPP
@@ -49,6 +41,7 @@
 
 #include <limits>       // std::numeric_limits
 #include <iostream>
+#include <log.hpp>
 
 namespace RoaLogic
 {
@@ -56,8 +49,6 @@ namespace testbench
 {
 namespace clock
 {
-
-
     template <typename T> class cSimtime_t;
     typedef cSimtime_t<long double> simtime_t;
 
@@ -75,7 +66,6 @@ namespace clock
         private:
         T _realtime;  //realtime in seconds
 
-
         public:
 
         constexpr static T max() { return std::numeric_limits<T>::max(); };
@@ -90,7 +80,6 @@ namespace clock
         constexpr static T seconds_per_year   = days_per_year * seconds_per_day;
         constexpr static T seconds_per_Hz     = 1.0;
 
-
         //constructors
         cSimtime_t () : _realtime(0.0){};
         cSimtime_t (T val) : _realtime(val){};
@@ -101,7 +90,6 @@ namespace clock
 
         //convert to frequency
         T frequency(void) const { return (seconds_per_Hz / _realtime); }
-
 
         //output formats
         T year   (void) const { return (_realtime / seconds_per_year  ); }
@@ -127,7 +115,6 @@ namespace clock
         T nHz    (void) const { return ( frequency() * 1.0E9          ); }
         T pHz    (void) const { return ( frequency() * 1.0E12         ); }
         T fHz    (void) const { return ( frequency() * 1.0E15         ); }
-
 
         //Overload operators
         cSimtime_t& operator+=(const cSimtime_t& rhs)
@@ -214,7 +201,6 @@ namespace clock
         inline simtime_t operator""_ps     (unsigned long long val) { return simtime_t( (long double)val / 1.0E12                       ); }
         inline simtime_t operator""_fs     (unsigned long long val) { return simtime_t( (long double)val / 1.0E15                       ); }
         inline simtime_t operator""_as     (unsigned long long val) { return simtime_t( (long double)val / 1.0E18                       ); }
-
 
         inline simtime_t operator""_PHz    (long double        val) { return simtime_t(simtime_t::seconds_per_Hz / (val * 1.0E15)); }
         inline simtime_t operator""_THz    (long double        val) { return simtime_t(simtime_t::seconds_per_Hz / (val * 1.0E12)); }

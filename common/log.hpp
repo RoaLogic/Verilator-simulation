@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -32,15 +32,6 @@
 //   POSSIBILITY OF SUCH DAMAGE.                                   //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-/**
- * @file log.hpp
- * @author Bjorn Schouteten
- * @brief 
- * @version 0.1
- * @date 9 may 2023
- * @copyright See beginning of file
- * 
- */
 
 #ifndef LOG_HPP
 #define LOG_HPP
@@ -48,13 +39,15 @@
 #include <mutex>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
-#define DEBUG cLog::getInstance()->log(eLogPriority::Debug)
-#define LOG cLog::getInstance()->log(eLogPriority::Log)
-#define INFO cLog::getInstance()->log(eLogPriority::Info)
-#define WARNING cLog::getInstance()->log(eLogPriority::Warning)
-#define ERROR cLog::getInstance()->log(eLogPriority::Error)
-#define FATAL cLog::getInstance()->log(eLogPriority::Fatal)
+#define DEBUG   RoaLogic::common::cLog::getInstance()->log(RoaLogic::common::eLogPriority::Debug)
+#define LOG     RoaLogic::common::cLog::getInstance()->log(RoaLogic::common::eLogPriority::Log)
+#define INFO    RoaLogic::common::cLog::getInstance()->log(RoaLogic::common::eLogPriority::Info)
+#define WARNING RoaLogic::common::cLog::getInstance()->log(RoaLogic::common::eLogPriority::Warning)
+#define ERROR   RoaLogic::common::cLog::getInstance()->log(RoaLogic::common::eLogPriority::Error)
+#define FATAL   RoaLogic::common::cLog::getInstance()->log(RoaLogic::common::eLogPriority::Fatal)
+#define APPEND  RoaLogic::common::cLog::getInstance()->log(RoaLogic::common::eLogPriority::Append)
 
 namespace RoaLogic
 {
@@ -68,7 +61,8 @@ namespace common
         Info,
         Warning,
         Error,
-        Fatal
+        Fatal,
+        Append
     };
 
     /**
@@ -84,7 +78,7 @@ namespace common
         bool _initialized = false;
         bool _saveToFile = false;
 
-        std::fstream _fileStream;
+        std::ofstream _fileStream;
         std::mutex _logMutex;
         static cLog* _myPointer;
 
@@ -121,11 +115,14 @@ namespace common
     {
         if(_currentMsgPriority >= _logPriority )
         {
-            std::string messageString;
-
-            messageString += msg;
-
-            this->appendStream(messageString);
+            if(_saveToFile)
+            {
+                _fileStream << msg;
+            }
+            else
+            {
+                std::cout << msg;
+            }
         }
 
         return *this;

@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -32,14 +32,6 @@
 //   POSSIBILITY OF SUCH DAMAGE.                                   //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-/*!
- * @file uniqueid.hpp
- * @author Richard Herveille
- * @brief UniqueId base class
- * @version 0.1
- * @date 3-may-2023
- * @copyright See beginning of file
- */
 
 #ifndef UNIQUEID_HPP
 #define UNIQUEID_HPP
@@ -57,17 +49,14 @@ namespace common
      * @class cUniqueId
      * @author Richard Herveille
      * @brief Template base class for a classes with a unique ID
-     * @version 0.1
-     * @date 3-may-2023
      *
      * @details This is a template base class for classes with unique IDs
-     * 
      */
     class cUniqueId
     {
         private:
-            static std::atomic<unsigned long> _globalId;  //Global ID counter
-            const  unsigned long _myId;                   //This instance's ID
+            static std::atomic<unsigned long> _globalId;  //!< Global ID counter
+            const  unsigned long _myId;                   //!< This instance's ID
 
         protected:
             /**

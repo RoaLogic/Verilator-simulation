@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -32,14 +32,6 @@
 //   POSSIBILITY OF SUCH DAMAGE.                                   //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-/*!
- * @file busapb4.hpp
- * @author Richard Herveille
- * @brief APB4 Bus Interface class
- * @version 0.1
- * @date 3-may-2023
- * @copyright See beginning of file
- */
 
 #ifndef BUSAPB4_HPP
 #define BUSAPB4_HPP
@@ -50,11 +42,13 @@
 #include <tasks.hpp>
 #include <clock.hpp>
 #include <buffer.hpp>
+#include <log.hpp>
 
-#define DBG_BUSAPB4_H
+//#define DBG_BUSAPB4_H
 
 namespace RoaLogic
 {
+    using namespace common;
 namespace bus
 {
     #define L (!1)
@@ -65,42 +59,29 @@ namespace bus
     using namespace common;
 
     /**
-     * Verilator Transaction Sequence
-     * ------------------------------
-     * 1. wait for clock edge
-     * 2. set signals
-     */
-
-
-    /**
      * @class cBusAPB4
-     * @author Richard Herveille
+     * @author Richard Herveille, Bjorn Schouteten
      * @brief APB Bus Interface Class
      * @version 0.1
      * @date 3-may-2023
      *
      * @details This is a class to drive an APB4 bus in a Verilator testbench
-     *          The class requires a buffer. This can be any other class/type as long as it push_back() and pop_front() supports.
      * 
      */
-    template <typename PADDR_t,
-              typename PDATA_t,
-              typename bufferType> class cBusAPB4 : public cBusInterface<PADDR_t,PDATA_t>
+    template <typename PADDR_t, typename PDATA_t> 
+    class cBusAPB4 : public cBusInterface<PADDR_t,PDATA_t>
     {
         private:
-            clock::cClock* _pclk;
-            uint8_t&       PRESETn;
-            uint8_t&       PSEL;
-            uint8_t&       PENABLE;
-            PADDR_t&       PADDR;
-            uint8_t&       PWRITE;
-            PDATA_t&       PWDATA;
-            PDATA_t&       PRDATA;
-            uint8_t&       PREADY;
-            uint8_t&       PSLVERR;
-
-//            bool   _busy;
-            bool           _error;
+            cClock*   PCLK;
+            uint8_t&  PRESETn;
+            uint8_t&  PSEL;
+            uint8_t&  PENABLE;
+            PADDR_t&  PADDR;
+            uint8_t&  PWRITE;
+            PDATA_t&  PWDATA;
+            PDATA_t&  PRDATA;
+            uint8_t&  PREADY;
+            uint8_t&  PSLVERR;
 
         public:
             /**
@@ -116,8 +97,8 @@ namespace bus
                      PDATA_t& prdata,
                      uint8_t& pready,
                      uint8_t& pslverr) :
-                     PRESETn (presetn),
-                     _pclk   (pclk   ),
+                     PCLK    (pclk   ),
+                     PRESETn (presetn),                     
                      PSEL    (psel   ),
                      PENABLE (penable),
                      PADDR   (paddr  ),
@@ -125,179 +106,161 @@ namespace bus
                      PWDATA  (pwdata ),
                      PRDATA  (prdata ),
                      PREADY  (pready ),
-                     PSLVERR (pslverr) {
-          #ifdef DBG_BUSAPB4_H
-              std::cout << "APB4 bus id(" << this->id() << ") constructed" << std::endl;
-          #endif
+                     PSLVERR (pslverr) 
+            {
+                #ifdef DBG_BUSAPB4_H
+                DEBUG << "APB4 bus id(" << this->id() << ") constructed \n";
+                #endif
+
+                PREADY = L;
             }
 
 
             /**
              * @brief Destroy the cBusInterface
              */
-            virtual ~cBusAPB4() {
-          #ifdef DBG_BUSAPB4_H
-              std::cout << "APB4 bus id(" << this->id() << ") destroyed" <<  std::endl;
-          #endif
-            }
-
-
-
-            /**
-             * @brief Reset APB bus
-             */
-            virtual clockedTask_t reset(unsigned duration=1)
+            virtual ~cBusAPB4() 
             {
-                this->transactionStart();
-                _error = false;
-
-                PRESETn = L;
-                for (int i=0; i<duration; i++) waitPosedge(_pclk);
-                
-                PRESETn = H;
-
-                this->transactionEnd();
+                #ifdef DBG_BUSAPB4_H
+                DEBUG << "APB4 bus id(" << this->id() << ") destroyed \n";
+                #endif
             }
 
-
             /**
-             * @brief Idle APB bus (Idle Transactions)
-             */
-            virtual clockedTask_t idle(unsigned duration=1)
-            {
-              this->transactionStart();
-
-              PRESETn = H;
-              PSEL    = L;
-              PENABLE = L;
-              for (int i=0; i<duration; i++) waitPosedge(_pclk);
-
-              this->transactionEnd();
-            }
-
-
-            /**
-             * @brief Perform a single read transaction
-             *
-             * @param address Address to read from
-             * @param data  Reference to databuffer to store the data read from the bus
-             */
-            virtual clockedTask_t read(PADDR_t address, PDATA_t& buffer)
-            {
-//std::cout << "APB4 bus(" << this->id() << ") read from " << hex << unsigned(address) << std::endl;
-                this->transactionStart();
-                _error = false;
-
-                PSEL    = H;
-                PENABLE = L;
-                PADDR   = address;
-                PWRITE  = L;
-                waitPosedge(_pclk);
-
-                PENABLE = H;
-                waitPosedge(_pclk);
-
-                while (PREADY == L) waitPosedge(_pclk);
-
-                buffer=PRDATA;
-                _error = (PSLVERR == H);
-
-                this->transactionEnd();
-            }
-
-
-            /**
-             * @brief Perform a burst read transaction on the bus
+             * @brief Perform a read transaction on the bus
+             * @details This function will perform a read
+             * on the APB bus. It will start reading from the address and continue
+             * for the number passed in with burstCount. With this updating the
+             * address and placing the data in the given buffer.
              *
              * @param address     Start address to read from
              * @param buffer      Databuffer to store the data read
              * @param burstCount  Number of transactions in this burst
              */
-            virtual clockedTask_t read(PADDR_t address, bufferType* buffer, unsigned burstCount=1) {
-                this->transactionStart();
-                _error = false;
+            virtual sCoRoutineHandler<bool> read(PADDR_t address, PDATA_t* buffer, unsigned burstCount=1) 
+            {
+                bool result = false;
+                uint8_t addressOffset = sizeof(PDATA_t); // Determine the size of a single element so we can advance the address
 
-                for (int transactionCnt=0; transactionCnt < burstCount; transactionCnt++)
+                if(!this->busy())
                 {
-                    PSEL    = H;
-                    PENABLE = L;
-                    PADDR   = address;
-                    PWRITE  = L;
-                    waitPosedge(_pclk);
+                    this->transactionStart();
+                    this->_error = false;
 
-                    PENABLE = H;
-                    waitPosedge(_pclk);
+                    // Perform the number of transaction passed by the user
+                    for (size_t i = 0; i < burstCount; i++)
+                    {
+                        #ifdef DBG_BUSAPB4_H
+                        DEBUG << "APB4 bus(" << this->id() << ") read from " << hex << unsigned(address + (addressOffset * i)) << '\n';
+                        #endif
 
-                    while (PREADY == L) waitPosedge(_pclk);
+                        // Here we are at the IDLE phase
+                        // Now we set the signals accordingly
+                        PENABLE  = L;
+                        PWRITE   = L;
+                        PADDR    = (address + (addressOffset * i)); // Set the address, add the offset onto the address
+                        PSEL     = H;
 
-                    buffer->push_back(PRDATA);
-                    _error = (PSLVERR == H);
+                        // Wait for the positive edge of the clock to transition into the access phase
+                        waitPosEdge(PCLK);
+
+                        // Set PENABLE high, so that we transition into the access phase with the next clock cycle
+                        PENABLE  = H;
+
+                        waitPosEdge(PCLK);
+
+                        // Wait until PREADY is in the right state and then transition out of the transaction
+                        // PENABLE is already at the right state, since we set it at that point
+                        // Since this is a single transaction it ends here.
+                        while (PREADY == L) waitPosEdge(PCLK);
+
+                        PENABLE  = L;
+                        buffer[i] = PRDATA;
+                    }
+
+                    // PSEL is only set when we transition back to the idle state, which is when there are no more transactions
+                    PSEL     = L;
+                    
+                    this->_error = (PSLVERR == H);
+                    result = !this->_error; // Set the result false in case we had a bus error
+
+                    this->transactionEnd();
+                }
+                else
+                {
+                    FATAL << "APB4 bus(" << this->id() << ") in busy state\n";
                 }
 
-                this->transactionEnd();
+                co_return result;
             }
 
-
             /**
-             * @brief Perform a single write transactions on the bus
-             *
-             * @param address Address to write to
-             * @param data    Data to write
-             */
-            virtual clockedTask_t write(PADDR_t address, PDATA_t data)
-            {
-//std::cout << "APB4 bus(" << this->id() << ") write " << hex << unsigned(data) << " to address " << hex << unsigned(address) << std::endl;
-                this->transactionStart();
-                _error = false;
-
-                PSEL    = H;
-                PENABLE = L;
-                PADDR   = address;
-                PWRITE  = H;
-                waitPosedge(_pclk);
-
-                PENABLE = H;
-                PWDATA  = data;
-                waitPosedge(_pclk);
-
-                while (PREADY == L) waitPosedge(_pclk);
-
-                _error = (PSLVERR == H);
-
-                this->transactionEnd();
-            }
-
-
-            /**
-             * @brief Perform burst write transaction on the bus
+             * @brief Perform a burst write transaction on the bus
+             * @details This function will perform a write on the APB bus.
+             * It will write the first data element to the passed address and then 
+             * continue to write the data in the buffer in the following addresses. Which
+             * will continue for the amount in burstCount.
              *
              * @param address    Start address of the burst transaction
              * @param buffer     Databuffer that holds the data to write
              * @param burstCount Number of transactions in this burst
              */
+            virtual sCoRoutineHandler<bool> write(PADDR_t address, PDATA_t* buffer, unsigned burstCount=1) 
+            {
+                bool result = false;
+                uint8_t addressOffset = sizeof(PDATA_t); // Determine the size of a single element so we can advance the address
 
-            virtual clockedTask_t write(PADDR_t address, bufferType* buffer, unsigned burstCount=1) {
-                this->transactionStart();
-                _error = false;
-
-                for (int transactionCnt=0; transactionCnt < burstCount; transactionCnt++)
+                if(!this->busy())
                 {
-                    PSEL    = H;
-                    PENABLE = L;
-                    PADDR   = address;
-                    PWRITE  = H;
-                    PWDATA  = buffer->pop_front();
-                    waitPosedge(_pclk);
+                    this->transactionStart();
+                    this->_error = false;
 
-                    PENABLE = H;
-                    waitPosedge(_pclk);
+                    // Perform the number of transaction passed by the user
+                    for (size_t i = 0; i < burstCount; i++)
+                    {
+                        #ifdef DBG_BUSAPB4_H
+                        DEBUG << "APB4 bus(" << this->id() << ") write " << hex << unsigned(buffer[i]) 
+                                << " to address " << hex << unsigned(address + (addressOffset * i)) << '\n';
+                        #endif
 
-                    while (PREADY == L) waitPosedge(_pclk);
+                        // Here we are at the IDLE phase
+                        // Now we set the signals accordingly
+                        PENABLE  = L;
+                        PWRITE   = H;
+                        PWDATA   = buffer[i]; // Loop through the passed data buffer
+                        PADDR    = (address + (addressOffset * i)); // Set the address, add the offset onto the address
+                        PSEL     = H;
 
-                    _error = (PSLVERR == H);
+                        // Wait for the positive edge of the clock to transition into the access phase
+                        waitPosEdge(PCLK);
+
+                        // Set PENABLE high, so that we transition into the access phase with the next clock cycle
+                        PENABLE  = H;
+
+                        waitPosEdge(PCLK);
+
+                        // Wait until PREADY is in the right state and then transition out of the transaction
+                        // PENABLE is already at the right state, since we set it at that point
+                        // Since this is a single transaction it ends here.
+                        while (PREADY == L) waitPosEdge(PCLK);
+
+                        PENABLE  = L;
+                    }
+
+                    // PSEL is only set when we transition back to the idle state, which is when there are no more transactions
+                    PSEL     = L;
+                    
+                    this->_error = (PSLVERR == H);
+                    result = !this->_error; // Set the result false in case we had a bus error
+
+                    this->transactionEnd();
+                }
+                else
+                {
+                    FATAL << "APB4 bus(" << this->id() << ") in busy state\n";
                 }
 
-                this->transactionEnd();
+                co_return result;
             }
     };
 }

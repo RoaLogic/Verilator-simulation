@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -33,15 +33,6 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 
-/*!
- * @file ClockManager.hpp
- * @author Richard Herveille
- * @brief Clock Manager Class for use in testbenches
- * @version 0.1
- * @date 30-apr-2023
- * @copyright See beginning of file
- */
-
 #ifndef CLOCKMANAGER_HPP
 #define CLOCKMANAGER_HPP
 
@@ -53,8 +44,8 @@
 //For MAXFLOAT
 #include <limits>
 
-//For std::cout
-#include <iostream>
+//For logging
+#include <log.hpp>
 
 //#define DBG_CLOCKMANAGER_H
  
@@ -67,18 +58,17 @@ namespace clock
 
     /**
      * @class cClockManager
-     * @author Richard Herveille
+     * @author Richard Herveille, Bjorn Schouteten
      * @brief Clock Manager Class for use in testbenches 
-     * @version 0.1
-     * @date 30-apr-2023
      * 
      * @details Manage the clock inputs of a verilated design
      */
     class cClockManager
     {
         private:
-            std::vector<cClock*> *_clocks;   //Collection holding all clocks
-            simtime_t _time;
+            std::vector<cClock*> *_clocks;   //!< Collection holding all clocks
+            simtime_t _time;                 //!< Simulation time
+            simtime_t _precision;            //!< Simulation precision
 
         public:
 
@@ -86,7 +76,8 @@ namespace clock
              * @brief Construct a new cClockManager object
              * 
              */
-            cClockManager(void) : 
+            cClockManager(simtime_t precision) : 
+                _precision(precision),
                 _time(0.0)
             {
                 //Create new collection
@@ -111,8 +102,6 @@ namespace clock
                 _clocks = NULL;
             }
 
-
-
             /**
              * @brief Add a new clock as reference
              * 
@@ -123,7 +112,6 @@ namespace clock
                 _clocks->push_back(&Clock);
             }
 
-
             /**
              * @brief Add a new clock as pointer
              * 
@@ -133,7 +121,6 @@ namespace clock
             {
                 _clocks->push_back(Clock);
             }
-
 
             /**
              * @brief Add and create a new clock
@@ -146,7 +133,7 @@ namespace clock
             virtual cClock* const add(uint8_t& Clock, simtime_t LowPeriod, simtime_t HighPeriod) const
             {
                 //Create new VClock
-                cClock* clock = new cClock(Clock, LowPeriod, HighPeriod);
+                cClock* clock = new cClock(Clock, _precision, LowPeriod, HighPeriod);
 
                 //Add clock
                 add(clock);
@@ -155,7 +142,6 @@ namespace clock
                 return clock;
             }
 
-            
             /**
              * @brief Add and create a new clock
              * 
@@ -168,7 +154,6 @@ namespace clock
                 return add(Clock, Period/2.0, Period/2.0);
             }
 
-
             /**
              * @brief Check if there are any clocks
              * 
@@ -180,7 +165,6 @@ namespace clock
                 return _clocks->empty();
             }
 
-
             /**
              * @brief Time manager tick function
              * @details This function is the actual time manager for all clocks
@@ -190,11 +174,12 @@ namespace clock
              * 
              * @return It returns the current passed time
              */
-            virtual simtime_t tick(void)
+            simtime_t tick(void)
             {
-          #ifdef DBG_CLOCKMANAGER_H
-            std::cout << "CLOCKMANAGER_H - tick()" << std::endl;
-          #endif
+                #ifdef DBG_CLOCKMANAGER_H
+                DEBUG << "CLOCKMANAGER_H - tick() \n";
+                #endif
+
                 //Current minimum time to next event = maximum float value
                 simtime_t minTimeToNextEvent = simtime_t::max();
 
@@ -208,9 +193,9 @@ namespace clock
                         minTimeToNextEvent = timeToNextEvent;
                     }             
 
-            #ifdef DBG_CLOCKMANAGER_H
-                    std::cout << "CLOCKMANAGER_H - tick: " << clk->getTimeToNextEvent() << "," << minTimeToNextEvent << "\n";
-            #endif
+                    #ifdef DBG_CLOCKMANAGER_H
+                    //DEBUG << "CLOCKMANAGER_H - tick: " << clk->getTimeToNextEvent() << "," << minTimeToNextEvent << "\n";
+                    #endif
 
                 }
 
@@ -226,7 +211,6 @@ namespace clock
 
                 return _time;
             }
-
 
             /**
              * @brief get the current time

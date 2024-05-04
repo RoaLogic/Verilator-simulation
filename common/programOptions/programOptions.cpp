@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -32,16 +32,6 @@
 //   POSSIBILITY OF SUCH DAMAGE.                                   //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-/**
- * @file programoptions.cpp
- * @author Bjorn Schouteten
- * @brief 
- * @version 0.1
- * @date 9 may 2023
- * @copyright See beginning of file
- * 
- */
-
 
 #include <programoptions.hpp>
 #include <log.hpp>

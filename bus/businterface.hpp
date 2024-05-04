@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 Roa Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //     This source file may be used and distributed without        //
@@ -32,14 +32,6 @@
 //   POSSIBILITY OF SUCH DAMAGE.                                   //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-/*!
- * @file businterface.hpp
- * @author Richard Herveille
- * @brief BusInterface base class
- * @version 0.1
- * @date 3-may-2023
- * @copyright See beginning of file
- */
 
 #ifndef BUSINTERFACE_HPP
 #define BUSINTERFACE_HPP
@@ -57,47 +49,49 @@ namespace bus
 
     /**
      * @class cBusInterface
-     * @author Richard Herveille
+     * @author Richard Herveille, Bjorn Schouteten
      * @brief Template base class for a bus-interface
      * @version 0.1
-     * @date 3-may-2023
+     * @date 27-mar-2024
      *
      * @details This is a template base class for testbench bus-interfaces
      * 
      */
-    template <typename addrT = unsigned long,
-              typename dataT = unsigned char> class cBusInterface : public common::cUniqueId
+    template <typename addrT = unsigned long, typename dataT = unsigned char> 
+    class cBusInterface : public common::cUniqueId
     {
+        protected:
+            bool _busy;         //!< Busy flag indicator, tells if the bus is busy or not
+            bool _error;        //!< Error flag indicator, tells if the bus is in a error state
+
         public:
-            bool _busy;
-            bool _error;
 
             /**
              * @brief Constructor
              */
             cBusInterface() : _busy(false), _error(false) { }
 
-
             /**
              * @brief Destroy the cBusBase object
              */
             virtual ~cBusInterface() {}
 
-
-            /**
-             * @brief Denote start of transaction
+            /** @brief Start a bus transaction
+             * @details This function starts a bus transaction
+             * by setting the _busy flag to true. It must be called
+             * at the beginning of every transaction
              */
-            virtual void transactionStart() { _busy=true; }
+            virtual void transactionStart() { _busy = true; }
 
-
-            /**
-             * @brief Denote end of transaction
+            /** @brief End a bus transaction
+             * @details This function ends a bus transaction
+             * by setting the _busy flag to false. It must be called 
+             * at the end of every transaction
              */
-            virtual void transactionEnd() { _busy=false; }
-
+            virtual void transactionEnd() { _busy = false; }
 
             /**
-             * @brief Is a transaction in progress?
+             * @brief Check if a bus transaction is busy
              *
              * @return true when a transaction is in progress
              */
@@ -105,7 +99,7 @@ namespace bus
 
 
             /**
-             * @brief Has current transaction completed?
+             * @brief Check if a bus transaction is done
              *
              * @return true when the current transaction completed
              */
@@ -119,60 +113,28 @@ namespace bus
              */
             virtual bool error() { return _error; }
 
+            /**
+             * @brief Perform a Read Transaction on the bus
+             * @details This is a interface function and must be implemented 
+             * in the derived class.
+             *
+             * @param address[in]       Start address of burst
+             * @param buffer[out]       Data read by this function
+             * @param burstCount[in]    Lenght of burst
+             * @result                  Array of read data
+             */
+            virtual sCoRoutineHandler<bool> read(addrT address, dataT* buffer, unsigned burstCount = 1) = 0;
 
             /**
-             * @brief Reset bus
+             * @brief Perform a Write transaction on the bus
+             * @details This is a interface function and must be implemented 
+             * in the derived class.
              *
-             * @param duration Number of cycles to assert the reset signal.
-             *                 The default duration is 1 cycle
+             * @param address[in]       Start address of burst
+             * @param data[in]          Pointer to Data to write
+             * @param burstCount[in]    The number of data elements to write
              */
-            virtual clockedTask_t reset(unsigned duration=1) =0;
-
-
-            /**
-             * @brief Idles the bus
-             *
-             * @param duration Number of idle cycles
-             *                 The default is 1 cycle
-             */
-            virtual clockedTask_t idle(unsigned duration=1) =0;
-
-
-            /**
-             * @brief Perform a single read transaction on the bus
-             *
-             * @param address     Address to read from
-             * @param data        Reference to databuffer to store the data read from the bus
-             */
-            virtual clockedTask_t read(addrT address, dataT& data) =0;
-
-
-            /**
-             * @brief Perform a Burst Read Transaction on the bus
-             *
-             * @param address[in]    Start address of burst
-             * @param burstCount[in] Lenght of burst
-             * @result               Array of read data
-             */
-            virtual clockedTask_t burstRead(addrT address, dataT* buffer, unsigned burstCount) { co_return; }
-
-
-            /**
-             * @brief Perform a single write transaction on the bus
-             *
-             * @param address[in]  Address to write to
-             * @param data[in]     Data to write
-             */
-            virtual clockedTask_t write(addrT address, dataT data) =0;
-
-
-            /**
-             * @brief Perform a Write Transaction on the bus
-             *
-             * @param address[in]  Start address of burst
-             * @param data[in]     Pointer to Data to write
-             */
-            virtual clockedTask_t burstWrite(addrT address, dataT* buffer, unsigned burstCount) { co_return; }
+            virtual sCoRoutineHandler<bool> write(addrT address, dataT* buffer, unsigned burstCount = 1) = 0;
     };
 }
 }
