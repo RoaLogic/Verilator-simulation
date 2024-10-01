@@ -264,6 +264,11 @@ namespace testbench
                 }
             }
 
+            void opentrace(std::string fileName)
+            {
+                opentrace(fileName.c_str());
+            }
+
             /**
              * @brief Close any open trace
              * 
