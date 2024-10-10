@@ -33,7 +33,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 
-#include <programoptions.hpp>
+#include <programOptions.hpp>
 #include <log.hpp>
 
 namespace RoaLogic

@@ -5,7 +5,7 @@
 //   |  |\  \ ' '-' '\ '-'  |    |  '--.' '-' ' '-' ||  |\ `--.    //
 //   `--' '--' `---'  `--`--'    `-----' `---' `-   /`--' `---'    //
 //                                             `---'               //
-//    No value option derived from base option                        //
+//    No value option derived from base option                     //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
@@ -36,7 +36,7 @@
 #ifndef NOVALUEOPTIONS_HPP
 #define NOVALUEOPTIONS_HPP
 
-#include <programoptions.hpp>
+#include <programOptions.hpp>
 #include <log.hpp>
 
 namespace RoaLogic

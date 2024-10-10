@@ -36,7 +36,7 @@
 #ifndef VALUEOPTIONS_HPP
 #define VALUEOPTIONS_HPP
 
-#include <programoptions.hpp>
+#include <programOptions.hpp>
 #include <sstream>
 #include <string.h>
 #include <log.hpp>
