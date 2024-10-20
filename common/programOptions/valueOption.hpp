@@ -326,7 +326,7 @@ namespace common
     template <class T>
     inline void cValueOption<T>::parse(cOptionName what_name, const char* value)
     {
-        size_t parsed_value;
+        size_t parsed_value = 0;
         std::string strValue;
         if (value != nullptr)
         {
