@@ -58,6 +58,12 @@ namespace testbench
 {
     using namespace clock;
 
+    class cTimeInterface
+    {
+        public:
+        virtual simtime_t getTime() = 0;
+    };
+
     /**
      * @class cTestBench
      * @author Richard Herveille, Bjorn Schouteten
@@ -73,7 +79,7 @@ namespace testbench
      * the exact knowledge on how everything works together.
      *
      */
-    template <class VM> class cTestBench
+    template <class VM> class cTestBench : public cTimeInterface
     {
         private:
             VerilatedContext*  _context;     //!< Verilator Context
@@ -170,16 +176,6 @@ namespace testbench
             virtual cClock* addClock(uint8_t& Clock, simtime_t Period) const
             {
                 return _clkMgr->add(Clock, Period);
-            }
-
-            /**
-             * @brief Get the runtime of the simulation
-             * 
-             * @return simulation runtime
-             */
-            virtual simtime_t getTime(void) const
-            {
-                return _clkMgr->getTime();
             }
 
             /**
@@ -281,6 +277,16 @@ namespace testbench
                     _trace->close();
                     _trace = NULL;
                 }
+            }
+
+            /**
+             * @brief Get the runtime of the simulation
+             * 
+             * @return simulation runtime
+             */
+            virtual simtime_t getTime(void)
+            {
+                return _clkMgr->getTime();
             }
     };
 }
