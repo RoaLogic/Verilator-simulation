@@ -54,7 +54,7 @@ namespace clock
     using namespace units;
     using namespace std;
 
-//#define DBG_CLOCK_H
+    // #define DBG_CLOCK_H
 
     /**
      * @brief Enum to describe the possible
@@ -85,6 +85,7 @@ namespace clock
     class cClock : common::cUniqueId
     {
         private:
+        bool        _running;         //!< Current state of the clock
         uint8_t&    _clk;             //!< Points to testbench clock variable
         simtime_t  _lowPeriod;        //!< Clock Low Period in seconds
         simtime_t  _highPeriod;       //!< Clock High Period in seconds
@@ -213,14 +214,18 @@ namespace clock
          * @param[in] LowPeriod   The low period of the clock
          * @param[in] HighPeriod  The high period of the clock
          */
-        cClock(uint8_t& clk, simtime_t precision, simtime_t LowPeriod, simtime_t HighPeriod) :
+        cClock(uint8_t& clk, simtime_t precision, simtime_t LowPeriod, simtime_t HighPeriod, bool running = true) :
             _clk(clk),
             _precision(precision),
             _lowPeriod(LowPeriod),
-            _highPeriod(HighPeriod)
+            _highPeriod(HighPeriod),
+            _running(running)
         {
             //set clock low
             _clk = 0;
+
+            assert(LowPeriod >= 0);
+            assert(HighPeriod >= 0);
 
             //clock is low, so TimeToNextEvent is LowPeriod
             _timeToNextEvent = LowPeriod;
@@ -242,6 +247,21 @@ namespace clock
             #endif
         }
 
+        /**
+         * @brief Enable the clock to trigger the signal
+         */
+        virtual void enable(void)
+        {
+            _running = true;
+        }
+
+        /**
+         * @brief Disable the clock from triggering the signal
+         */
+        virtual void disable(void)
+        {
+            _running = false;
+        }
 
         /**
          * @brief Set and get the Low Period 
@@ -348,17 +368,21 @@ namespace clock
             #ifdef DBG_CLOCK_H
             DEBUG << "CLOCK_H(" << id() << ") updateTime(" << TimePassed << ")\n";
             #endif
-            //Subtract time-passed from the time until the next event
-            _timeToNextEvent -= TimePassed;
 
-            //_TimeToNextEvent should never be negative
-            assert(_timeToNextEvent >= 0);
-
-            //It's possible that there are some small rouding errors in the 
-            //calculation so therefore use a window of the given precision and 0
-            if (_timeToNextEvent >= 0 && _timeToNextEvent < _precision) 
+            if(_running)
             {
-                toggle();
+                //Subtract time-passed from the time until the next event
+                _timeToNextEvent -= TimePassed;
+
+                //_TimeToNextEvent should never be negative
+                assert(_timeToNextEvent >= 0);
+
+                //It's possible that there are some small rouding errors in the 
+                //calculation so therefore use a window of the given precision and 0
+                if (_timeToNextEvent >= 0 && _timeToNextEvent < _precision) 
+                {
+                    toggle();
+                }
             }
 
             return _timeToNextEvent;

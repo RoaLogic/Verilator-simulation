@@ -128,12 +128,13 @@ namespace clock
              * @param[in] clk         Clock pin  
              * @param[in] LowPeriod   The period that the pin shall be low
              * @param[in] HighPeriod  The period that the pin shall be high
+             * @param[in] on           The clock is directly active, default = true
              * @return cClock*        Pointer to the cClock object that is created
              */
-            virtual cClock* const add(uint8_t& Clock, simtime_t LowPeriod, simtime_t HighPeriod) const
+            virtual cClock* const add(uint8_t& Clock, simtime_t LowPeriod, simtime_t HighPeriod, bool on = true) const
             {
                 //Create new VClock
-                cClock* clock = new cClock(Clock, _precision, LowPeriod, HighPeriod);
+                cClock* clock = new cClock(Clock, _precision, LowPeriod, HighPeriod, on);
 
                 //Add clock
                 add(clock);
@@ -147,11 +148,12 @@ namespace clock
              * 
              * @param[in] clk         Clock pin
              * @param[in] Period      The period for the clock 
+             * @param[in] on           The clock is directly active, default = true
              * @return cClock*        Pointer to the cClock object that is created
              */
-            virtual cClock* const add(uint8_t& Clock, simtime_t Period) const
+            virtual cClock* const add(uint8_t& Clock, simtime_t Period, bool on = true) const
             {
-                return add(Clock, Period/2.0, Period/2.0);
+                return add(Clock, Period/2.0, Period/2.0, on);
             }
 
             /**

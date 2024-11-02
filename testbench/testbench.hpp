@@ -158,11 +158,12 @@ namespace testbench
              * @param[in] Clock        Clock pin  
              * @param[in] LowPeriod   The period that the pin shall be low
              * @param[in] HighPeriod  The period that the pin shall be high
+             * @param[in] on           The clock is directly active, default = true
              * @return a pointer to the clock object
              */
-            virtual cClock* addClock(uint8_t& Clock, simtime_t LowPeriod, simtime_t HighPeriod) const
+            virtual cClock* addClock(uint8_t& Clock, simtime_t LowPeriod, simtime_t HighPeriod, bool on = true) const
             {
-                return _clkMgr->add(Clock, LowPeriod, HighPeriod);
+                return _clkMgr->add(Clock, LowPeriod, HighPeriod, on);
             }
 
             /**
@@ -171,11 +172,12 @@ namespace testbench
              * 
              * @param[in] Clock       Clock pin 
              * @param[in] Period      The period of the clock pin
+             * @param[in] on           The clock is directly active, default = true
              * @return a pointer to the clock object 
              */
-            virtual cClock* addClock(uint8_t& Clock, simtime_t Period) const
+            virtual cClock* addClock(uint8_t& Clock, simtime_t Period, bool on = true) const
             {
-                return _clkMgr->add(Clock, Period);
+                return _clkMgr->add(Clock, Period, on);
             }
 
             /**
