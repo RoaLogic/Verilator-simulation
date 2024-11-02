@@ -213,6 +213,7 @@ namespace clock
          * @param[in] precision   Precision setting of the clock      
          * @param[in] LowPeriod   The low period of the clock
          * @param[in] HighPeriod  The high period of the clock
+         * @param[in] runnig      The clock is directly running, default is running
          */
         cClock(uint8_t& clk, simtime_t precision, simtime_t LowPeriod, simtime_t HighPeriod, bool running = true) :
             _clk(clk),
